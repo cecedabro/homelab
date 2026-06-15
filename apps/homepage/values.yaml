@@ -1,0 +1,53 @@
+image:
+  repository: ghcr.io/gethomepage/homepage
+
+enableRbac: false
+
+serviceAccount:
+  name: ""
+  create: false
+
+service:
+  main:
+    ports:
+      http:
+        port: 3000
+config:
+  bookmarks: []
+
+  services:
+    - Cluster Management:
+        - Portainer:
+            href: https://192.168.50.11:30779
+            description: Container & pod management
+        - Longhorn:
+            href: http://192.168.50.10:8080
+            description: Distributed storage
+        - Grafana:
+            href: http://192.168.50.10:3000
+            description: Monitoring dashboards
+    - Gaming:
+        - Minecraft Bedrock:
+            href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
+            description: "Connect via 100.113.240.94:30000"
+
+  widgets:
+    - resources:
+        backend: resources
+        expanded: true
+        cpu: true
+        memory: true
+    - search:
+        provider: duckduckgo
+        target: _blank
+
+  settingsString: |
+    title: Cedric's Homelab
+    headerStyle: boxed
+
+kubernetes:
+  mode: disable
+
+env:
+  - name: HOMEPAGE_ALLOWED_HOSTS
+    value: "192.168.50.101:3000"

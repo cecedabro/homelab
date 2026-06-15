@@ -20,16 +20,20 @@ config:
         - Portainer:
             href: https://192.168.50.11:30779
             description: Container & pod management
+            icon: portainer
         - Longhorn:
-            href: http://192.168.50.10:8080
+            href: http://192.168.50.103
             description: Distributed storage
+            icon: longhorn
         - Grafana:
-            href: http://192.168.50.10:3000
+            href: http://192.168.50.102
             description: Monitoring dashboards
+            icon: grafana
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
             description: "Connect via 100.113.240.94:30000"
+            icon: minecraft
 
   widgets:
     - resources:

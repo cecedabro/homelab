@@ -20,3 +20,16 @@ persistence:
   storageClass: longhorn
   dataDir:
     enabled: true
+
+extraInitContainers: |
+  - name: setup-mtu
+    image: busybox:latest
+    command:
+      - /bin/sh
+      - -c
+      - |
+        ip route change default via $(ip route | grep default | awk '{print $3}') dev eth0 mtu 1280
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN

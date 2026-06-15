@@ -17,6 +17,6 @@ resources:
     cpu: 2000m
 
 persistence:
-  storageClass: local-path
+  storageClass: longhorn
   dataDir:
     enabled: true

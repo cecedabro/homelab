@@ -6,7 +6,7 @@ minecraftServer:
   gameMode: survival
   levelSeed: ""
   onlineMode: true
-  serviceType: NodePort
+  serviceType: LoadBalancer
 
 resources:
   requests:

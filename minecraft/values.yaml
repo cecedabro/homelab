@@ -1,0 +1,22 @@
+minecraftServer:
+  eula: true
+  serverName: "Cedrics Server"
+  difficulty: normal
+  maxPlayers: 20
+  gameMode: survival
+  levelSeed: ""
+  onlineMode: true
+  serviceType: NodePort
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 2Gi
+    cpu: 2000m
+
+persistence:
+  storageClass: local-path
+  dataDir:
+    enabled: true

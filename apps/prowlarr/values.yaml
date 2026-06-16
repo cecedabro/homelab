@@ -1,0 +1,14 @@
+env:
+  TZ: "Europe/Amsterdam"
+
+service:
+  main:
+    ports:
+      http:
+        port: 9696
+
+persistence:
+  config:
+    enabled: true
+    storageClass: longhorn
+    size: 1Gi

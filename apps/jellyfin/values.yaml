@@ -1,0 +1,41 @@
+image:
+  repository: docker.io/jellyfin/jellyfin
+
+service:
+  type: ClusterIP
+  port: 8096
+
+runtimeClassName: nvidia
+
+nodeSelector:
+  kubernetes.io/hostname: k3s-gpu-01
+
+tolerations:
+  - key: dedicated
+    operator: Equal
+    value: gpu
+    effect: NoSchedule
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+
+persistence:
+  config:
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    storageClass: longhorn
+  media:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteMany
+    size: 3600Gi
+    storageClass: ""
+    existingClaim: nfs-media
+  cache:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    storageClass: longhorn

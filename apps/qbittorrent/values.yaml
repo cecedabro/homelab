@@ -15,6 +15,6 @@ persistence:
     size: 1Gi
   downloads:
     enabled: true
-    existingClaim: media-shared
+    existingClaim: nfs-media
     globalMounts:
       - path: /downloads

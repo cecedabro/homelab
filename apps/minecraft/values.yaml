@@ -24,3 +24,15 @@ persistence:
   storageClass: longhorn
   dataDir:
     enabled: true
+
+startupProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  failureThreshold: 10
+  periodSeconds: 10
+
+livenessProbe:
+  enabled: false
+
+readinessProbe:
+  initialDelaySeconds: 120

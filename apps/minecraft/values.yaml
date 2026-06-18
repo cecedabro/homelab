@@ -26,13 +26,10 @@ persistence:
     enabled: true
 
 startupProbe:
-  enabled: true
-  initialDelaySeconds: 60
-  failureThreshold: 10
-  periodSeconds: 10
-
-livenessProbe:
   enabled: false
 
+livenessProbe:
+  initialDelaySeconds: 600
+
 readinessProbe:
-  initialDelaySeconds: 120
+  initialDelaySeconds: 600

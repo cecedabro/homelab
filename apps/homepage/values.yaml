@@ -34,6 +34,23 @@ config:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
             description: "Connect via 100.113.240.94:30000"
             icon: minecraft
+    - Media:
+        - Jellyfin:
+            href: http://192.168.50.107:8096
+            description: Media streaming
+            icon: jellyfin
+        - qBittorrent:
+            href: http://192.168.50.104:8080
+            description: Download client
+            icon: qbittorrent
+        - Prowlarr:
+            href: http://192.168.50.105:9696
+            description: Indexer manager
+            icon: prowlarr
+        - Radarr:
+            href: http://192.168.50.106:7878
+            description: Movie automation
+            icon: radarr
 
   widgets:
     - resources:

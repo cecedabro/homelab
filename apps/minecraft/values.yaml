@@ -8,6 +8,7 @@ minecraftServer:
   onlineMode: true
   serviceType: NodePort
   nodePort: 30000
+  allowList: false
 
 nodeSelector:
   kubernetes.io/hostname: k3s-worker-01
@@ -29,7 +30,7 @@ startupProbe:
   enabled: false
 
 livenessProbe:
-  initialDelaySeconds: 600
+  initialDelaySeconds: 30
 
 readinessProbe:
-  initialDelaySeconds: 600
+  initialDelaySeconds: 30

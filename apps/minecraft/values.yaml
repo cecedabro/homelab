@@ -8,7 +8,8 @@ minecraftServer:
   onlineMode: true
   serviceType: NodePort
   nodePort: 30000
-  allowList: false
+  extraEnv:
+    VERSION: "1.26.23.0"
 
 nodeSelector:
   kubernetes.io/hostname: k3s-worker-01
@@ -25,12 +26,3 @@ persistence:
   storageClass: longhorn
   dataDir:
     enabled: true
-
-startupProbe:
-  enabled: false
-
-livenessProbe:
-  initialDelaySeconds: 30
-
-readinessProbe:
-  initialDelaySeconds: 30

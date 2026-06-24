@@ -1,7 +1,23 @@
 nextcloud:
   host: 192.168.50.108
   username: cedric
-  password: ijasd-oeuqnr-90
+  password: yourpassword
+  trustedDomains:
+    - 192.168.50.108
+    - localhost
+    - 10.42.0.0/16
+
+  configs:
+    custom.config.php: |-
+      <?php
+      $CONFIG = array (
+        'trusted_domains' => array(
+          0 => 'localhost',
+          1 => '192.168.50.108',
+          2 => '10.42.0.0/16',
+        ),
+        'overwriteprotocol' => 'http',
+      );
 
 service:
   type: LoadBalancer
@@ -11,9 +27,6 @@ persistence:
   enabled: true
   storageClass: longhorn
   size: 5Gi
-
-nextcloud:
-  datadir: /var/www/html/data
 
 extraVolumes:
   - name: nfs-media

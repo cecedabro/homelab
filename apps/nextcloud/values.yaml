@@ -1,7 +1,7 @@
 nextcloud:
   host: 192.168.50.108
-  username: cedric
-  password: yourpassword
+  username: admin
+  password: ijasd-oeuqnr-90
   trustedDomains:
     - 192.168.50.108
     - localhost
@@ -19,6 +19,15 @@ nextcloud:
         'overwriteprotocol' => 'http',
       );
 
+  extraVolumes:
+    - name: nfs-media
+      persistentVolumeClaim:
+        claimName: nfs-media
+
+  extraVolumeMounts:
+    - name: nfs-media
+      mountPath: /mnt/media-storage
+
 service:
   type: LoadBalancer
   port: 80
@@ -27,12 +36,3 @@ persistence:
   enabled: true
   storageClass: longhorn
   size: 5Gi
-
-extraVolumes:
-  - name: nfs-media
-    persistentVolumeClaim:
-      claimName: nfs-media
-
-extraVolumeMounts:
-  - name: nfs-media
-    mountPath: /mnt/media-storage

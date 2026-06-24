@@ -17,4 +17,4 @@ persistence:
     enabled: true
     existingClaim: nfs-media
     globalMounts:
-      - path: /downloads
+      - path: /media

@@ -1,0 +1,25 @@
+nextcloud:
+  host: 192.168.50.108
+  username: cedric
+  password: ijasd-oeuqnr-90
+
+service:
+  type: LoadBalancer
+  port: 80
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  size: 5Gi
+
+nextcloud:
+  datadir: /var/www/html/data
+
+extraVolumes:
+  - name: nfs-media
+    persistentVolumeClaim:
+      claimName: nfs-media
+
+extraVolumeMounts:
+  - name: nfs-media
+    mountPath: /mnt/media-storage

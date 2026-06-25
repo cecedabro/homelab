@@ -9,7 +9,8 @@ minecraftServer:
   serviceType: NodePort
   nodePort: 30000
   extraEnv:
-    VERSION: "1.26.23.0"
+    VERSION: "LATEST"
+    ALLOW_LIST: "false"
 
 nodeSelector:
   kubernetes.io/hostname: k3s-worker-01

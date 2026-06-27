@@ -1,0 +1,38 @@
+minecraftServer:
+  eula: true
+  serverName: "Cedrics Creative"
+  difficulty: peaceful
+  maxPlayers: 20
+  gameMode: creative
+  levelSeed: ""
+  onlineMode: true
+  serviceType: NodePort
+  nodePort: 30001
+  extraEnv:
+    VERSION: "LATEST"
+    ALLOW_LIST: "false"
+
+nodeSelector:
+  kubernetes.io/hostname: k3s-worker-01
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: 500m
+  limits:
+    memory: 2Gi
+    cpu: 2000m
+
+persistence:
+  storageClass: longhorn
+  dataDir:
+    enabled: true
+
+startupProbe:
+  enabled: false
+
+livenessProbe:
+  initialDelaySeconds: 30
+
+readinessProbe:
+  initialDelaySeconds: 30

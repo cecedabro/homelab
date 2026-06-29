@@ -33,6 +33,7 @@ persistence:
     size: 3600Gi
     storageClass: ""
     existingClaim: nfs-media
+    mountPath: /media/movies
   cache:
     enabled: true
     type: pvc

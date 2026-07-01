@@ -40,3 +40,13 @@ persistence:
     accessMode: ReadWriteOnce
     size: 10Gi
     storageClass: longhorn
+
+extraVolumes:
+  - name: movies
+    persistentVolumeClaim:
+      claimName: nfs-media
+
+extraVolumeMounts:
+  - name: movies
+    mountPath: /movies
+    subPath: movies

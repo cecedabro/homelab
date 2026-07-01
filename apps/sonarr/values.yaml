@@ -1,0 +1,26 @@
+# pree/sonarr uses bjw-s common library chart
+# https://github.com/bjw-s/helm-charts/tree/main/charts/library/common
+
+image:
+  repository: ghcr.io/home-operations/sonarr
+  pullPolicy: IfNotPresent
+
+env:
+  TZ: Europe/Amsterdam
+
+service:
+  main:
+    type: LoadBalancer
+    ports:
+      http:
+        port: 8989
+
+persistence:
+  config:
+    enabled: true
+    storageClass: longhorn
+    size: 1Gi
+  media:
+    enabled: true
+    mountPath: /media
+    existingClaim: nfs-media

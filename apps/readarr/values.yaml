@@ -1,0 +1,23 @@
+image:
+  repository: ghcr.io/home-operations/readarr
+  pullPolicy: IfNotPresent
+
+env:
+  TZ: Europe/Amsterdam
+
+service:
+  main:
+    type: LoadBalancer
+    ports:
+      http:
+        port: 8787
+
+persistence:
+  config:
+    enabled: true
+    storageClass: longhorn
+    size: 1Gi
+  media:
+    enabled: true
+    mountPath: /media
+    existingClaim: nfs-media

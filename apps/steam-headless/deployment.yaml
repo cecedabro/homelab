@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: steam-headless
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: steam-headless
+  template:
+    metadata:
+      labels:
+        app: steam-headless
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k3s-gpu-01
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: gpu
+          effect: NoSchedule
+      hostNetwork: true
+      runtimeClassName: nvidia
+      containers:
+        - name: steam-headless
+          image: josh5/steam-headless:latest
+          securityContext:
+            privileged: true
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_ADMIN
+                - SYS_NICE
+          env:
+            - name: TZ
+              value: Europe/Amsterdam
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: USER_PASSWORD
+              value: "changeme"
+            - name: MODE
+              value: primary
+            - name: WEB_UI_MODE
+              value: vnc
+            - name: ENABLE_STEAM
+              value: "true"
+            - name: ENABLE_SUNSHINE
+              value: "true"
+            - name: SUNSHINE_USER
+              value: admin
+            - name: SUNSHINE_PASS
+              value: "changeme"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: all
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: all
+          resources:
+            limits:
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: config
+              mountPath: /home/default
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: steam-headless-config
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: steam-headless-config
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi

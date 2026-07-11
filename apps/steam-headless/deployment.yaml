@@ -5,6 +5,8 @@ metadata:
   namespace: media
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: steam-headless
@@ -40,7 +42,7 @@ spec:
             - name: PGID
               value: "1000"
             - name: USER_PASSWORD
-              value: "changeme"
+              value: "scheetje2001"
             - name: MODE
               value: primary
             - name: WEB_UI_MODE
@@ -52,7 +54,7 @@ spec:
             - name: SUNSHINE_USER
               value: admin
             - name: SUNSHINE_PASS
-              value: "changeme"
+              value: "scheetje2001"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: all
             - name: NVIDIA_VISIBLE_DEVICES
@@ -85,4 +87,4 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 50Gi
+      storage: 20Gi

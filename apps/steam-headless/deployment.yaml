@@ -23,6 +23,7 @@ spec:
           value: gpu
           effect: NoSchedule
       hostNetwork: true
+      hostIPC: true
       runtimeClassName: nvidia
       containers:
         - name: steam-headless
@@ -59,6 +60,10 @@ spec:
               value: all
             - name: NVIDIA_VISIBLE_DEVICES
               value: all
+            - name: FORCE_X11_DUMMY_CONFIG
+              value: "true"
+            - name: ENABLE_ENDEV_INPUTS
+              value: "true"
           resources:
             limits:
               nvidia.com/gpu: 1

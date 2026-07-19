@@ -29,6 +29,8 @@ spec:
               value: "custom"
             - name: VPN_TYPE
               value: "wireguard"
+            - name: WIREGUARD_MTU
+              value: "1200"
             - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
@@ -47,6 +49,9 @@ spec:
               value: "51820"
             - name: TZ
               value: "Europe/Amsterdam"
+          volumeMounts:
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
           readinessProbe:
             exec:
               command:
@@ -82,6 +87,9 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: nfs-media
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
 
 ---
 apiVersion: v1

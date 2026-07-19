@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      initContainers:
+        - name: gluetun
+          image: ghcr.io/qdm12/gluetun:latest
+          restartPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "custom"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-protonvpn
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-protonvpn
+                  key: WIREGUARD_ADDRESSES
+            - name: WIREGUARD_PUBLIC_KEY
+              value: "vH2i8RY1qc66XfqwrixBpvH4K9GYJatkugJj0GHgoUQ="
+            - name: VPN_ENDPOINT_IP
+              value: "217.23.3.76"
+            - name: VPN_ENDPOINT_PORT
+              value: "51820"
+            - name: TZ
+              value: "Europe/Amsterdam"
+          readinessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+      containers:
+        - name: qbittorrent
+          image: ghcr.io/linuxserver/qbittorrent:version-5.0.3-r0
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Amsterdam"
+            - name: WEBUI_PORT
+              value: "8080"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media
+
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  type: LoadBalancer
+  selector:
+    app: qbittorrent
+  ports:
+    - port: 8080
+      targetPort: 8080

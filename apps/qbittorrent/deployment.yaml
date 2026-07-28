@@ -47,6 +47,8 @@ spec:
               value: "89.39.104.165"
             - name: VPN_ENDPOINT_PORT
               value: "51820"
+            - name: WIREGUARD_ALLOWED_IPS
+              value: "0.0.0.0/0"
             - name: TZ
               value: "Europe/Amsterdam"
           volumeMounts:

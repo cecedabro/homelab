@@ -95,17 +95,3 @@ spec:
         - name: dev-net-tun
           hostPath:
             path: /dev/net/tun
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: qbittorrent
-  namespace: media
-spec:
-  type: LoadBalancer
-  selector:
-    app: qbittorrent
-  ports:
-    - port: 8080
-      targetPort: 8080

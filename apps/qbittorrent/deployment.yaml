@@ -15,6 +15,45 @@ spec:
       labels:
         app: qbittorrent
     spec:
+      initContainers:
+        - name: gluetun
+          image: ghcr.io/qdm12/gluetun:latest
+          restartPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "mullvad"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-mullvad
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: gluetun-mullvad
+                  key: WIREGUARD_ADDRESSES
+            - name: SERVER_COUNTRIES
+              value: "Netherlands"
+            - name: TZ
+              value: "Europe/Amsterdam"
+          volumeMounts:
+            - name: dev-net-tun
+              mountPath: /dev/net/tun
+          readinessProbe:
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
       containers:
         - name: qbittorrent
           image: ghcr.io/linuxserver/qbittorrent:version-5.0.3-r0
@@ -42,6 +81,9 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: nfs-media
+        - name: dev-net-tun
+          hostPath:
+            path: /dev/net/tun
 
 ---
 apiVersion: v1

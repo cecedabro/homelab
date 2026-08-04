@@ -48,7 +48,7 @@ config:
             description: Media streaming
             icon: jellyfin
         - qBittorrent:
-            href: http://192.168.50.104:8080
+            href: http://192.168.50.111:8080
             description: Download client
             icon: qbittorrent
         - Prowlarr:

@@ -1,0 +1,17 @@
+replicaCount: 2
+
+tunnel:
+  quickTunnel:
+    enabled: false
+  existingSecret: cloudflared-token
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

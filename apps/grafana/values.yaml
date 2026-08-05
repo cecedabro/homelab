@@ -1,0 +1,10 @@
+service:
+  type: LoadBalancer
+
+adminUser: admin
+adminPassword: "<set-a-real-password-here>"
+
+persistence:
+  enabled: true
+  storageClassName: longhorn
+  size: 5Gi

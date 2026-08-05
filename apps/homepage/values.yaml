@@ -32,20 +32,16 @@ config:
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
-            description: "Connect via 100.113.240.94:30000"
+            description: "Connect via mom's relay >> RELAY-PUBLIC-IP:19132"
             icon: minecraft
         - Minecraft Creative:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-creative?tab=resources
-            description: "Connect via mom's relay :19133"
+            description: "Connect via mom's relay >> RELAY-PUBLIC-IP:19133"
             icon: minecraft
-        - Steam Headless:
-            href: http://192.168.50.13:8083
-            description: "Cloud gaming via Sunshine/Moonlight"
-            icon: steam
     - Media:
         - Jellyfin:
-            href: http://192.168.50.107:8096
-            description: Media streaming
+            href: http://jellyfin.cedricschippers.dev
+            description: Media streaming at http://jellyfin.cedricschippers.dev hosted with Cloudflare
             icon: jellyfin
         - qBittorrent:
             href: http://192.168.50.111:8080

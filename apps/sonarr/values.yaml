@@ -11,6 +11,8 @@ env:
 service:
   main:
     type: LoadBalancer
+    annotations:
+      metallb.universe.tf/loadBalancerIPs: "192.168.50.110"
     ports:
       http:
         port: 8989

@@ -3,6 +3,8 @@ env:
 
 service:
   main:
+    annotations:
+      metallb.universe.tf/loadBalancerIPs: "192.168.50.105"
     ports:
       http:
         port: 9696

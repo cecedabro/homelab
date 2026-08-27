@@ -1,7 +1,10 @@
 nextcloud:
   host: 192.168.50.108
-  username: admin
-  password: REMOVED-ROTATED-PASSWORD
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-admin
+    usernameKey: nextcloud-username
+    passwordKey: nextcloud-password
   trustedDomains:
     - 192.168.50.108
     - localhost

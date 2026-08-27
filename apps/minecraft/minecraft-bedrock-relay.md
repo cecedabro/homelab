@@ -13,22 +13,22 @@ Phone (Minecraft Bedrock v26.31)
         │
         │ UDP 19132
         ▼
-Mom's Fritz!Box (public IP: RELAY-PUBLIC-IP)
-  Port forward: UDP 19132 → 192.168.178.85
+Mom's Fritz!Box (public IP: 92.109.xxx.xx)
+  Port forward: UDP 19132 → 192.168.xxx.xx
         │
         │ UDP 19132
         ▼
 Pi 2 at mom's house
-  Local IP:     192.168.178.85
-  Tailscale IP: 100.81.60.13
+  Local IP:     192.168.xxx.xx
+  Tailscale IP: 100.81.xx.xx
   Script:       /usr/local/bin/udp-proxy.py
   Service:      minecraft-relay (systemd)
         │
-        │ UDP via Tailscale → 100.113.240.94:30000
+        │ UDP via Tailscale → 100.113.xxx.xx:30000
         ▼
 k3s-worker-01
-  Local IP:     192.168.50.11
-  Tailscale IP: 100.113.240.94
+  Local IP:     192.168.xx.xx
+  Tailscale IP: 100.113.xxx.xx
   NodePort:     30000 → 19132
         │
         │ Kubernetes NodePort
@@ -143,7 +143,7 @@ import struct
 
 LOCAL_HOST = '0.0.0.0'
 LOCAL_PORT = 19132
-REMOTE_HOST = '100.113.240.94'  # k3s-worker-01 Tailscale IP
+REMOTE_HOST = '100.113.xxx.xx'  # k3s-worker-01 Tailscale IP
 REMOTE_PORT = 30000             # Kubernetes NodePort
 
 # RakNet magic bytes — always this exact 16-byte sequence in unconnected packets
@@ -375,7 +375,7 @@ sudo journalctl -u minecraft-relay -f
 
 ```bash
 # On k3s-worker-01 while phone tries to connect:
-ssh cedric@192.168.50.11
+ssh xxxx@192.168.xx.xx
 sudo tcpdump -i any udp port 30000
 
 # Healthy (pong fix working):
@@ -390,7 +390,7 @@ sudo tcpdump -i any udp port 30000
 ### Check relay logs on Pi
 
 ```bash
-ssh cedric@100.81.60.13
+ssh xxxx@100.81.xx.xx
 sudo journalctl -u minecraft-relay -f
 # Should show: "Replaced broken pong for ..." when phone connects
 ```
@@ -405,9 +405,9 @@ kubectl logs -n minecraft deployment/minecraft-bedrock-minecraft-bedrock | grep 
 ### Full chain test from Pi
 
 ```bash
-ssh cedric@100.81.60.13
+ssh xxxx@100.81.xx.xx
 # Test NodePort reachable
-sudo nmap -sU -p 30000 100.113.240.94
+sudo nmap -sU -p 30000 100.113.xxx.xx
 # open|filtered = healthy, closed = pod not running or NodePort broken
 
 # Watch incoming traffic from phone

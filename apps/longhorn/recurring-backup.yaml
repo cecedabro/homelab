@@ -1,0 +1,25 @@
+# Daily Longhorn backups to the backup target (Settings -> Backup Target):
+#   nfs://192.168.50.10:/mnt/media-storage/longhorn-backups
+# Covers every volume in the "default" group (all volumes without their own job labels),
+# so app configs (arr stack, Jellyfin, Nextcloud, Grafana) and OpenBao are included.
+# Prometheus is left out on purpose (see the "metrics" group below): it's large, churns
+# constantly and 15 days of metrics aren't worth backing up.
+#   kubectl -n longhorn-system label volumes.longhorn.io pvc-5e0e47f7-10f3-4bc2-acb7-9f5dd72a26fa \
+#     recurring-job-group.longhorn.io/metrics=enabled
+#
+# NOTE: the target lives on k3s-cp-01's disk. That protects against deleted/corrupted
+# volumes and Longhorn problems, not against losing that machine. Add an off-site
+# target (e.g. Backblaze B2) later for that.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-backup
+  namespace: longhorn-system
+spec:
+  task: backup
+  cron: "0 2 * * *"
+  groups:
+    - default
+  retain: 7
+  concurrency: 2
+  labels: {}

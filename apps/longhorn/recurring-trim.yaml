@@ -1,4 +1,4 @@
-# Weekly filesystem trim for every Longhorn volume in the "default" group
+# Weekly filesystem trim for every Longhorn volume in the "default" and "metrics" groups
 # (volumes without their own recurring-job labels belong to it).
 # Hands blocks the apps have deleted back to Longhorn so replicas don't keep growing.
 # Snapshots marked "removed" are only reclaimed if the Longhorn setting
@@ -14,6 +14,7 @@ spec:
   cron: "0 3 * * 0"
   groups:
     - default
+    - metrics
   retain: 0
   concurrency: 1
   labels: {}

@@ -24,14 +24,17 @@ config:
             href: https://192.168.50.11:30779
             description: Container & pod management
             icon: portainer
+            siteMonitor: https://portainer.portainer.svc.cluster.local:9443
         - Longhorn:
             href: http://192.168.50.104
             description: Distributed storage
             icon: longhorn
+            siteMonitor: http://longhorn-frontend.longhorn-system.svc.cluster.local
         - Grafana:
             href: http://192.168.50.112
             description: Monitoring dashboards
             icon: grafana
+            siteMonitor: http://grafana.monitoring.svc.cluster.local
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
@@ -41,35 +44,52 @@ config:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-creative?tab=resources
             description: "Connect via mom's relay >> RELAY-PUBLIC-IP:19133"
             icon: minecraft
+    - Cloud:
+        - Nextcloud:
+            href: http://192.168.50.108
+            description: Files, photos & calendar
+            icon: nextcloud
+            siteMonitor: http://192.168.50.108/status.php
     - Media:
         - Jellyfin:
             href: http://jellyfin.cedricschippers.dev
-            description: Media streaming at http://jellyfin.cedricschippers.dev hosted with Cloudflare
+            description: "Media streaming via Cloudflare (LAN: http://192.168.50.102:8096)"
+            icon: jellyfin
+            siteMonitor: http://jellyfin.media.svc.cluster.local:8096
+        - Jellyfin (LAN):
+            href: http://192.168.50.102:8096
+            description: Direct on the home network, no Cloudflare hop
             icon: jellyfin
         - qBittorrent:
             href: http://192.168.50.111:8080
             description: Download client
             icon: qbittorrent
+            siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
         - Prowlarr:
             href: http://192.168.50.105:9696
             description: Indexer manager
             icon: prowlarr
+            siteMonitor: http://prowlarr.media.svc.cluster.local:9696
         - Radarr:
             href: http://192.168.50.106:7878
             description: Movie automation
             icon: radarr
+            siteMonitor: http://radarr.media.svc.cluster.local:7878
         - Sonarr:
             href: http://192.168.50.110:8989
             description: TV & anime automation
             icon: sonarr
+            siteMonitor: http://sonarr.media.svc.cluster.local:8989
         - Readarr:
             href: http://192.168.50.103:8787
             description: Ebook automation
             icon: readarr
+            siteMonitor: http://readarr.media.svc.cluster.local:8787
         - FlareSolverr:
             href: http://192.168.50.109:8191
-            description: Cloudflare bypass proxy for indexers
+            description: Cloudflare bypass proxy for indexers (API only, no real UI)
             icon: flaresolverr
+            siteMonitor: http://flaresolverr.media.svc.cluster.local:8191
 
   widgets:
     - resources:

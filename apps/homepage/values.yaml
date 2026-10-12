@@ -49,11 +49,11 @@ config:
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
-            description: "Connect via mom's relay >> RELAY-PUBLIC-IP:19132"
+            description: "Connect via the relay, port 19132 (address in password manager)"
             icon: minecraft
         - Minecraft Creative:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-creative?tab=resources
-            description: "Connect via mom's relay >> RELAY-PUBLIC-IP:19133"
+            description: "Connect via the relay, port 19133 (address in password manager)"
             icon: minecraft
     - Cloud:
         - Nextcloud:

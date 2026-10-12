@@ -5,7 +5,7 @@ service:
   main:
     type: LoadBalancer
     annotations:
-      metallb.universe.tf/loadBalancerIPs: "192.168.50.106"
+      metallb.io/loadBalancerIPs: "192.168.50.106"
     ports:
       http:
         port: 7878
@@ -19,3 +19,12 @@ persistence:
     enabled: true
     existingClaim: nfs-media
     mountPath: /media
+
+# Run as the same user as qBittorrent (PUID 1000), so imports can hardlink the
+# downloaded files instead of silently falling back to a full copy.
+# fsGroup lets the existing config volume (owned by 65534) stay writable.
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch

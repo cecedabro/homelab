@@ -23,3 +23,12 @@ persistence:
     enabled: true
     mountPath: /media
     existingClaim: nfs-media
+
+# Run as the same user as qBittorrent (PUID 1000), so imports can hardlink the
+# downloaded files instead of silently falling back to a full copy.
+# fsGroup lets the existing config volume (owned by 65534) stay writable.
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch

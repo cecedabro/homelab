@@ -1,0 +1,77 @@
+# Cloudflare tunnel connector (remotely managed tunnel: routes are configured in the
+# Cloudflare dashboard). Replaces the cloudflare-tunnel-remote Helm chart, which can
+# only read the token from its own values and so can't use a Secret from OpenBao.
+# Token comes from the cloudflared-token Secret (ExternalSecret, OpenBao
+# secret/cloudflare/cloudflared-token). Restart after rotating the token:
+#   kubectl -n cloudflare rollout restart deploy/cloudflared
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      # One connector per node so a node reboot doesn't drop the tunnel
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: cloudflared
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2026.7.3
+          command: ["cloudflared", "tunnel", "--no-autoupdate", "--metrics", "0.0.0.0:2000", "run"]
+          env:
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-token
+                  key: TUNNEL_TOKEN
+          ports:
+            - name: metrics
+              containerPort: 2000
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cloudflared

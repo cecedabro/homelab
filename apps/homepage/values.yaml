@@ -9,6 +9,9 @@ serviceAccount:
 
 service:
   main:
+    type: LoadBalancer
+    annotations:
+      metallb.io/loadBalancerIPs: "192.168.50.101"
     ports:
       http:
         port: 3000

@@ -1,0 +1,19 @@
+# Weekly filesystem trim for every Longhorn volume in the "default" group
+# (volumes without their own recurring-job labels belong to it).
+# Hands blocks the apps have deleted back to Longhorn so replicas don't keep growing.
+# Snapshots marked "removed" are only reclaimed if the Longhorn setting
+# "Remove Snapshots During Filesystem Trim" is enabled.
+# Runs Sunday 03:00, before the 04:00 descheduler run.
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: weekly-trim
+  namespace: longhorn-system
+spec:
+  task: filesystem-trim
+  cron: "0 3 * * 0"
+  groups:
+    - default
+  retain: 0
+  concurrency: 1
+  labels: {}

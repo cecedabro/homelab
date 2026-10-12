@@ -1,4 +1,10 @@
 server:
+  # Prometheus UI on the LAN (no auth: LAN-only, never route this through Cloudflare)
+  service:
+    type: LoadBalancer
+    servicePort: 80
+    annotations:
+      metallb.io/loadBalancerIPs: "192.168.50.113"
   persistentVolume:
     enabled: true
     storageClass: longhorn

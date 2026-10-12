@@ -35,6 +35,11 @@ config:
             description: Monitoring dashboards
             icon: grafana
             siteMonitor: http://grafana.monitoring.svc.cluster.local
+        - Prometheus:
+            href: http://192.168.50.113
+            description: Metrics & queries (LAN only, no login)
+            icon: prometheus
+            siteMonitor: http://prometheus-server.monitoring.svc.cluster.local/-/healthy
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources

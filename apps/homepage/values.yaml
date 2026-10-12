@@ -40,6 +40,12 @@ config:
             description: Metrics & queries (LAN only, no login)
             icon: prometheus
             siteMonitor: http://prometheus-server.monitoring.svc.cluster.local/-/healthy
+        - OpenBao:
+            href: http://192.168.50.114:8200/ui/
+            description: Secrets manager (synced into the cluster by External Secrets)
+            icon: openbao
+            # /sys/health returns 503 while sealed, so a red dot means: go unseal it
+            siteMonitor: http://openbao.openbao.svc.cluster.local:8200/v1/sys/health
     - Gaming:
         - Minecraft Bedrock:
             href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources

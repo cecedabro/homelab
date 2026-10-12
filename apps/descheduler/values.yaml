@@ -7,7 +7,8 @@ schedule: "0 4 * * *"
 
 deschedulerPolicy:
   maxNoOfPodsToEvictPerNode: 12
-  # System namespaces are excluded per plugin below (Longhorn/MetalLB/k3s manage their own placement)
+  # System namespaces are excluded per plugin below (Longhorn/MetalLB/k3s manage their own placement).
+  # openbao is excluded because every eviction re-seals it and needs a manual unseal.
   profiles:
     - name: default
       pluginConfig:
@@ -23,31 +24,31 @@ deschedulerPolicy:
         - name: RemoveDuplicates
           args:
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
         - name: RemovePodsHavingTooManyRestarts
           args:
             podRestartThreshold: 100
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
             includingInitContainers: true
         - name: RemovePodsViolatingNodeAffinity
           args:
             nodeAffinityType:
               - requiredDuringSchedulingIgnoredDuringExecution
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
         - name: RemovePodsViolatingNodeTaints
           args:
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
         - name: RemovePodsViolatingInterPodAntiAffinity
           args:
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
         - name: RemovePodsViolatingTopologySpreadConstraint
           args:
             namespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
         - name: LowNodeUtilization
           args:
             # Most apps have no resource requests yet, so pod count is the main balancing signal
@@ -62,7 +63,7 @@ deschedulerPolicy:
               memory: 60
               pods: 32
             evictableNamespaces:
-              exclude: [kube-system, longhorn-system, metallb-system]
+              exclude: [kube-system, longhorn-system, metallb-system, openbao]
       plugins:
         balance:
           enabled:

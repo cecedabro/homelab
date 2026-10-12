@@ -1,0 +1,30 @@
+# helm upgrade --install openbao openbao/openbao --version 0.30.3 \
+#   -n openbao --create-namespace -f apps/openbao/values.yaml
+#
+# Single-node OpenBao, manual (Shamir) unseal: after every pod restart run
+#   kubectl -n openbao exec -it openbao-0 -- bao operator unseal   (3x, different keys)
+# Unseal keys + root token live only in your password manager, never in git.
+
+injector:
+  # Secrets reach apps through External Secrets Operator, not the sidecar injector
+  enabled: false
+
+server:
+  standalone:
+    enabled: true
+  dataStorage:
+    enabled: true
+    size: 2Gi
+    storageClass: longhorn
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+ui:
+  enabled: true
+  serviceType: LoadBalancer
+  annotations:
+    metallb.io/loadBalancerIPs: "192.168.50.114"

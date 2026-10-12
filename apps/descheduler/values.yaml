@@ -1,0 +1,77 @@
+# helm upgrade --install descheduler descheduler/descheduler --version 0.37.0 \
+#   -n kube-system -f apps/descheduler/values.yaml
+# Run once by hand: kubectl -n kube-system create job --from=cronjob/descheduler descheduler-manual
+kind: CronJob
+# Nightly so evictions (and Longhorn volume re-attaches) don't interrupt anyone
+schedule: "0 4 * * *"
+
+deschedulerPolicy:
+  maxNoOfPodsToEvictPerNode: 12
+  # System namespaces are excluded per plugin below (Longhorn/MetalLB/k3s manage their own placement)
+  profiles:
+    - name: default
+      pluginConfig:
+        - name: DefaultEvictor
+          args:
+            # Only evict if the pod actually fits on another node (respects taints like dedicated=uwv/gpu)
+            nodeFit: true
+            podProtections:
+              defaultDisabled:
+                - "PodsWithLocalStorage"
+              # PodsWithPVC protection intentionally removed: almost every app here has a Longhorn PVC,
+              # and all single-replica PVC apps use the Recreate strategy so a move is safe
+        - name: RemoveDuplicates
+          args:
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+        - name: RemovePodsHavingTooManyRestarts
+          args:
+            podRestartThreshold: 100
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+            includingInitContainers: true
+        - name: RemovePodsViolatingNodeAffinity
+          args:
+            nodeAffinityType:
+              - requiredDuringSchedulingIgnoredDuringExecution
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+        - name: RemovePodsViolatingNodeTaints
+          args:
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+        - name: RemovePodsViolatingInterPodAntiAffinity
+          args:
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+        - name: RemovePodsViolatingTopologySpreadConstraint
+          args:
+            namespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+        - name: LowNodeUtilization
+          args:
+            # Most apps have no resource requests yet, so pod count is the main balancing signal
+            # Node is "underutilized" when below ALL of these (% of allocatable)
+            thresholds:
+              cpu: 30
+              memory: 30
+              pods: 25
+            # Node is "overutilized" when above ANY of these
+            targetThresholds:
+              cpu: 60
+              memory: 60
+              pods: 32
+            evictableNamespaces:
+              exclude: [kube-system, longhorn-system, metallb-system]
+      plugins:
+        balance:
+          enabled:
+            - RemoveDuplicates
+            - RemovePodsViolatingTopologySpreadConstraint
+            - LowNodeUtilization
+        deschedule:
+          enabled:
+            - RemovePodsHavingTooManyRestarts
+            - RemovePodsViolatingNodeTaints
+            - RemovePodsViolatingNodeAffinity
+            - RemovePodsViolatingInterPodAntiAffinity

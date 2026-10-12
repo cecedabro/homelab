@@ -1,10 +1,32 @@
 service:
   type: LoadBalancer
+  annotations:
+    metallb.io/loadBalancerIPs: "192.168.50.112"
 
-adminUser: admin
-adminPassword: "<set-a-real-password-here>"
+# RWO Longhorn volume: old pod must release it before the new one starts
+deploymentStrategy:
+  type: Recreate
+
+# Admin credentials live in a Secret created outside of git (later: managed by ESO/OpenBao)
+#   kubectl -n monitoring create secret generic grafana-admin \
+#     --from-literal=admin-user=admin --from-literal=admin-password=<password>
+admin:
+  existingSecret: grafana-admin
+  userKey: admin-user
+  passwordKey: admin-password
 
 persistence:
   enabled: true
   storageClassName: longhorn
   size: 5Gi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: true

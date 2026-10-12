@@ -1,6 +1,12 @@
 # Longhorn release: helm -n longhorn-system (chart longhorn/longhorn 1.12.0)
 # Settings below were applied live via `kubectl patch settings.longhorn.io` on 2026-10-12.
 # defaultSettings only seed a fresh install; keep this file in sync with the live settings.
+service:
+  ui:
+    type: LoadBalancer
+    annotations:
+      metallb.io/loadBalancerIPs: "192.168.50.104"
+
 defaultSettings:
   # Move pods automatically when a node dies instead of leaving them stuck on its volumes
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod

@@ -2,8 +2,14 @@ image:
   repository: docker.io/jellyfin/jellyfin
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 8096
+  annotations:
+    metallb.io/loadBalancerIPs: "192.168.50.102"
+
+# RWO Longhorn volumes + a single GPU: old pod must stop before the new one starts
+deploymentStrategy:
+  type: Recreate
 
 runtimeClassName: nvidia
 

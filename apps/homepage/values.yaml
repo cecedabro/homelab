@@ -22,11 +22,11 @@ config:
             description: Container & pod management
             icon: portainer
         - Longhorn:
-            href: http://192.168.50.103
+            href: http://192.168.50.104
             description: Distributed storage
             icon: longhorn
         - Grafana:
-            href: http://192.168.50.102
+            href: http://192.168.50.112
             description: Monitoring dashboards
             icon: grafana
     - Gaming:
@@ -60,7 +60,7 @@ config:
             description: TV & anime automation
             icon: sonarr
         - Readarr:
-            href: http://192.168.50.111:8787
+            href: http://192.168.50.103:8787
             description: Ebook automation
             icon: readarr
         - FlareSolverr:

@@ -14,6 +14,7 @@ resources:
   - jellyfin/externalsecret-api.yaml
   - nextcloud/externalsecret.yaml
   - qbittorrent/externalsecret.yaml
+  - ruilingen/externalsecret.yaml
   # certificates and ingress
   - cert-manager/clusterissuers.yaml
   - traefik/home-certificate.yaml
@@ -24,6 +25,9 @@ resources:
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
   - minecraft/cronjob-restart.yaml
+  - ruilingen/namespace.yaml
+  - ruilingen/pvc.yaml
+  - ruilingen/deployment.yaml
   # storage jobs
   - longhorn/recurring-backup.yaml
   - longhorn/recurring-trim.yaml
@@ -36,11 +40,13 @@ resources:
   - network-policies/nextcloud.yaml
   - network-policies/portainer.yaml
   - network-policies/portfolio.yaml
+  - network-policies/ruilingen.yaml
   - hva/networkpolicy-portfolio-db.yaml
   - openbao/networkpolicy.yaml
   # Flux HelmReleases (+ their chart sources)
   - flux/helm-repositories.yaml
   - flux/helmreleases.yaml
+  - flux/image-automation.yaml
 
 # values.yaml files -> ConfigMaps in flux-system for the HelmReleases. The watch label makes
 # Flux upgrade the release as soon as the ConfigMap changes.

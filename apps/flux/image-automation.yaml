@@ -1,0 +1,59 @@
+# Flux image automation for apps built in their own repo (currently: ruilingen).
+# 1. ImageRepository scans ghcr.io for new tags (public image, no credentials).
+# 2. ImagePolicy picks the newest build of `main` from its sortable tag main-<YYYYMMDDHHmmss>-<sha>.
+# 3. ImageUpdateAutomation rewrites the image line marked with {"$imagepolicy": ...} in this repo,
+#    commits and pushes to main; the normal Flux sync then deploys it.
+# Pushing uses its own GitRepository with a write deploy key (Secret flux-system/homelab-git-write,
+# created by hand, not in git). The main flux-system source stays read-only and anonymous.
+# To follow releases (v1.2.3 tags) instead of every main build, swap the ImagePolicy for the
+# commented semver one below.
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata: {name: ruilingen, namespace: flux-system}
+spec:
+  image: ghcr.io/cecedabro/ruilingen-portaal
+  interval: 5m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata: {name: ruilingen, namespace: flux-system}
+spec:
+  imageRepositoryRef: {name: ruilingen}
+  filterTags:
+    pattern: '^main-(?P<ts>[0-9]{14})-[a-f0-9]+$'
+    extract: '$ts'
+  policy:
+    numerical: {order: asc}
+# Releases only:
+#   policy:
+#     semver: {range: ">=0.1.0"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata: {name: homelab-write, namespace: flux-system}
+spec:
+  interval: 10m
+  url: ssh://git@github.com/cecedabro/homelab
+  ref: {branch: main}
+  secretRef: {name: homelab-git-write}
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata: {name: homelab, namespace: flux-system}
+spec:
+  interval: 5m
+  sourceRef: {kind: GitRepository, name: homelab-write}
+  git:
+    checkout:
+      ref: {branch: main}
+    commit:
+      author: {name: fluxcdbot, email: fluxcdbot@users.noreply.github.com}
+      messageTemplate: |
+        Flux: update images
+
+        {{ range .Changed.Changes }}- {{ .OldValue }} -> {{ .NewValue }}
+        {{ end }}
+    push: {branch: main}
+  update:
+    path: ./apps
+    strategy: Setters

@@ -39,3 +39,11 @@ persistence:
   enabled: true
   storageClass: longhorn
   size: 5Gi
+# Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit, avoids throttling),
+# memory request + limit so one app cannot starve the node.
+resources:
+  requests:
+    cpu: 50m
+    memory: 384Mi
+  limits:
+    memory: 1536Mi

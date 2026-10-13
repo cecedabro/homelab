@@ -17,7 +17,13 @@ spec:
     spec:
       initContainers:
         - name: gluetun
-          image: ghcr.io/qdm12/gluetun:latest
+          image: ghcr.io/qdm12/gluetun:latest@sha256:2733bb22b27e3efa7a9f2cef9057ec12791b8b225793fcd3dbfd0508404dfc25  # pinned to build running on 2026-10-13
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
           restartPolicy: Always
           securityContext:
             capabilities:
@@ -57,6 +63,12 @@ spec:
       containers:
         - name: qbittorrent
           image: ghcr.io/linuxserver/qbittorrent:version-5.0.3-r0
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              memory: 6Gi
           env:
             - name: PUID
               value: "1000"

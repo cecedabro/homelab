@@ -22,9 +22,14 @@ tolerations:
     value: gpu
     effect: NoSchedule
 
+# Requests/limits from 7-day Prometheus peaks (2026-10-13); no CPU limit (transcoding bursts)
 resources:
+  requests:
+    cpu: 100m
+    memory: 1Gi
   limits:
     nvidia.com/gpu: 1
+    memory: 4Gi
 
 persistence:
   config:

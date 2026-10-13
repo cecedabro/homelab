@@ -122,3 +122,11 @@ kubernetes:
 env:
   - name: HOMEPAGE_ALLOWED_HOSTS
     value: "192.168.50.101:3000"
+# Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit, avoids throttling),
+# memory request + limit so one app cannot starve the node.
+resources:
+  requests:
+    cpu: 20m
+    memory: 128Mi
+  limits:
+    memory: 384Mi

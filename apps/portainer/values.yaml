@@ -1,0 +1,13 @@
+
+service:
+  # NodePort 30777/30779 is what Homepage and bookmarks use
+  type: NodePort
+
+# Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit, avoids throttling),
+# memory request + limit so one app cannot starve the node.
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

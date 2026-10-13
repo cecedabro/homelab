@@ -1,3 +1,5 @@
+# Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit,
+# avoids throttling), memory request + limit so one component cannot starve the node.
 server:
   # Prometheus UI on the LAN (no auth: LAN-only, never route this through Cloudflare)
   service:
@@ -9,15 +11,47 @@ server:
     enabled: true
     storageClass: longhorn
     size: 10Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 768Mi
+    limits:
+      memory: 2Gi
 
 alertmanager:
   persistence:
     enabled: true
     storageClassName: longhorn
     size: 2Gi
+  resources:
+    requests:
+      cpu: 5m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
 prometheus-node-exporter:
   enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
 
 kube-state-metrics:
   enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+
+prometheus-pushgateway:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 32Mi
+    limits:
+      memory: 128Mi

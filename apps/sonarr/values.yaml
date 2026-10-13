@@ -35,3 +35,12 @@ podSecurityContext:
   runAsGroup: 1000
   fsGroup: 1000
   fsGroupChangePolicy: OnRootMismatch
+
+# Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit, avoids throttling),
+# memory request + limit so one app cannot starve the node.
+resources:
+  requests:
+    cpu: 20m
+    memory: 256Mi
+  limits:
+    memory: 1Gi

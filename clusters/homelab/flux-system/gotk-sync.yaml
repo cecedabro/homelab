@@ -1,0 +1,25 @@
+# Flux watches this (public) repo; no credentials needed to read it.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/cecedabro/homelab
+  ref:
+    branch: main
+---
+# Root: applies clusters/homelab (Flux itself + the Kustomizations below it)
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./clusters/homelab
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

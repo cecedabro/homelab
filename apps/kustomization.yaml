@@ -1,0 +1,40 @@
+# What Flux applies from this folder (Kustomization "apps" in clusters/homelab/apps.yaml).
+# Not listed on purpose: Helm values files (used by HelmReleases below or by `helm upgrade`),
+# PV/PVC manifests and the pvc-recover helpers (one-off, immutable fields), Minecraft's Helm
+# releases (hand-patched probes, see apps/minecraft/values.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # secrets plumbing
+  - external-secrets/clustersecretstore-openbao.yaml
+  - cert-manager/externalsecret-cloudflare.yaml
+  - cloudflare/externalsecret.yaml
+  - grafana/externalsecret.yaml
+  - hva/externalsecret-portfolio-db.yaml
+  - jellyfin/externalsecret-api.yaml
+  - nextcloud/externalsecret.yaml
+  - qbittorrent/externalsecret.yaml
+  # certificates and ingress
+  - cert-manager/clusterissuers.yaml
+  - traefik/home-certificate.yaml
+  - traefik/ingresses.yaml
+  # workloads not managed by Helm
+  - cloudflare/deployment.yaml
+  - flaresolverr/deployment.yaml
+  - qbittorrent/deployment.yaml
+  - k3s-backup/cronjob.yaml
+  - minecraft/cronjob-restart.yaml
+  # storage jobs
+  - longhorn/recurring-backup.yaml
+  - longhorn/recurring-trim.yaml
+  # network policies
+  - network-policies/cloudflare.yaml
+  - network-policies/homepage.yaml
+  - network-policies/hva.yaml
+  - network-policies/media.yaml
+  - network-policies/monitoring.yaml
+  - network-policies/nextcloud.yaml
+  - network-policies/portainer.yaml
+  - network-policies/portfolio.yaml
+  - hva/networkpolicy-portfolio-db.yaml
+  - openbao/networkpolicy.yaml

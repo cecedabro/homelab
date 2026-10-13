@@ -38,3 +38,15 @@ resources:
   - network-policies/portfolio.yaml
   - hva/networkpolicy-portfolio-db.yaml
   - openbao/networkpolicy.yaml
+  # Flux HelmReleases (+ their chart sources)
+  - flux/helm-repositories.yaml
+  - flux/helmreleases.yaml
+
+# values.yaml files -> ConfigMaps in flux-system for the HelmReleases. The watch label makes
+# Flux upgrade the release as soon as the ConfigMap changes.
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    reconcile.fluxcd.io/watch: Enabled
+configMapGenerator:
+  - {name: homepage-values, namespace: flux-system, files: [values.yaml=homepage/values.yaml]}

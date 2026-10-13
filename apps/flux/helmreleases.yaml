@@ -1,0 +1,19 @@
+# Helm releases managed by Flux. Each one takes over the release that was installed by hand
+# (same releaseName, storageNamespace = the app's namespace) and gets its values from the
+# app's values.yaml, turned into a ConfigMap by apps/kustomization.yaml (configMapGenerator).
+# Editing a values.yaml + push = Flux runs the helm upgrade. Renovate bumps `version:`.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: homepage, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: homepage
+  targetNamespace: homepage
+  storageNamespace: homepage
+  chart:
+    spec:
+      chart: homepage
+      version: 2.1.0
+      sourceRef: {kind: HelmRepository, name: jameswynn}
+  valuesFrom:
+    - {kind: ConfigMap, name: homepage-values, valuesKey: values.yaml}

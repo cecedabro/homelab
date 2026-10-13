@@ -22,6 +22,36 @@ alertmanager:
     enabled: true
     storageClassName: longhorn
     size: 2Gi
+  # Notifications go to the ntfy app (public ntfy.sh, built-in "alertmanager" template).
+  # The topic works like a password, so the URLs live in the Secret alertmanager-ntfy
+  # (keys: url, url-critical; created by hand, not in git) and are read via url_file.
+  extraSecretMounts:
+    - name: ntfy
+      mountPath: /etc/alertmanager-secrets
+      secretName: alertmanager-ntfy
+      readOnly: true
+  config:
+    global: {}
+    route:
+      receiver: ntfy
+      group_by: [alertname, namespace]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      routes:
+        - matchers: ['severity="critical"']
+          receiver: ntfy-critical
+    receivers:
+      - name: ntfy
+        webhook_configs:
+          - url_file: /etc/alertmanager-secrets/url
+            send_resolved: true
+      - name: ntfy-critical
+        webhook_configs:
+          - url_file: /etc/alertmanager-secrets/url-critical
+            send_resolved: true
+    templates:
+      - /etc/alertmanager/*.tmpl
   resources:
     requests:
       cpu: 5m

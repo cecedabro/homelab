@@ -3,9 +3,9 @@
 # defaultSettings only seed a fresh install; keep this file in sync with the live settings.
 service:
   ui:
-    type: LoadBalancer
-    annotations:
-      metallb.io/loadBalancerIPs: "192.168.50.104"
+    # Internal only: https://longhorn.home.cedricschippers.dev (Traefik + basic auth).
+    # The former LoadBalancer IP 192.168.50.104 was removed so the login can't be bypassed.
+    type: ClusterIP
 
 defaultSettings:
   # Move pods automatically when a node dies instead of leaving them stuck on its volumes

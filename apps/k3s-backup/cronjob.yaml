@@ -1,0 +1,69 @@
+# Nightly, encrypted backup of the k3s datastore to the NAS.
+#
+# k3s-cp-01 runs k3s with the embedded SQLite datastore (no etcd), so `k3s etcd-snapshot`
+# doesn't apply. This job takes an online-safe copy with SQLite's .backup API, bundles it with
+# the server token (needed to restore), encrypts it with AES-256 (passphrase in Secret
+# k3s-backup-passphrase, ALSO keep it in your password manager) and writes it to
+#   /mnt/media-storage/k3s-backups/k3s-<timestamp>.tar.gz.enc   (on the NAS, 14 days kept)
+# Encrypted because the NAS is NFS-exported with no_root_squash and mounted by root pods.
+#
+# Restore (on a fresh k3s-cp-01, k3s stopped):
+#   openssl enc -d -aes-256-cbc -pbkdf2 -in k3s-<ts>.tar.gz.enc | tar xz
+#   cp state.db /var/lib/rancher/k3s/server/db/state.db; cp token /var/lib/rancher/k3s/server/token
+#   systemctl start k3s
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: k3s-datastore-backup
+  namespace: kube-system
+spec:
+  schedule: "30 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: k3s-cp-01
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+          containers:
+            - name: backup
+              image: alpine:3.20.3
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  apk add --no-cache sqlite openssl >/dev/null
+                  ts=$(date +%Y%m%d-%H%M)
+                  mkdir -p /work
+                  sqlite3 /server/db/state.db ".backup /work/state.db"
+                  sqlite3 /work/state.db "PRAGMA integrity_check;" | grep -qx ok
+                  cp /server/token /work/token
+                  tar czf - -C /work state.db token \
+                    | openssl enc -aes-256-cbc -pbkdf2 -salt -pass file:/secret/passphrase \
+                    > /out/k3s-$ts.tar.gz.enc.tmp
+                  mv /out/k3s-$ts.tar.gz.enc.tmp /out/k3s-$ts.tar.gz.enc
+                  chmod 600 /out/k3s-$ts.tar.gz.enc
+                  find /out -name 'k3s-*.tar.gz.enc' -mtime +14 -delete
+                  echo "backup ok: k3s-$ts.tar.gz.enc ($(du -h /out/k3s-$ts.tar.gz.enc | cut -f1))"
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {memory: 256Mi}
+              volumeMounts:
+                - {name: server, mountPath: /server}
+                - {name: out, mountPath: /out}
+                - {name: passphrase, mountPath: /secret, readOnly: true}
+          volumes:
+            - name: server
+              hostPath: {path: /var/lib/rancher/k3s/server, type: Directory}
+            - name: out
+              hostPath: {path: /mnt/media-storage/k3s-backups, type: DirectoryOrCreate}
+            - name: passphrase
+              secret: {secretName: k3s-backup-passphrase, defaultMode: 0400}

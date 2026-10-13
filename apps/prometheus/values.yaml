@@ -1,12 +1,11 @@
 # Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit,
 # avoids throttling), memory request + limit so one component cannot starve the node.
 server:
-  # Prometheus UI on the LAN (no auth: LAN-only, never route this through Cloudflare)
+  # Internal only: reachable at https://prometheus.home.cedricschippers.dev (Traefik + basic auth).
+  # The former LoadBalancer IP 192.168.50.113 was removed so the login can't be bypassed.
   service:
-    type: LoadBalancer
+    type: ClusterIP
     servicePort: 80
-    annotations:
-      metallb.io/loadBalancerIPs: "192.168.50.113"
   persistentVolume:
     enabled: true
     storageClass: longhorn

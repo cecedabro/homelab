@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Opens PRs for new chart and image versions. Merging a PR = Flux deploys it.",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "timezone": "Europe/Amsterdam",
+  "schedule": ["* 6-22 * * 6"],
+  "prConcurrentLimit": 5,
+  "labels": ["renovate"],
+  "flux": {
+    "managerFilePatterns": ["/^clusters/.+\\.ya?ml$/", "/^apps/flux/.+\\.ya?ml$/"]
+  },
+  "kubernetes": {
+    "managerFilePatterns": ["/^apps/.+\\.ya?ml$/"]
+  },
+  "helm-values": {
+    "managerFilePatterns": ["/^apps/.+/values[^/]*\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "description": "Flux's own controllers in one PR",
+      "matchManagers": ["flux"],
+      "matchPackageNames": ["fluxcd/flux2"],
+      "groupName": "flux"
+    },
+    {
+      "description": "Minecraft is on a hand-patched stopgap (NetherNet); no updates until it is redesigned",
+      "matchFileNames": ["apps/minecraft/**"],
+      "enabled": false
+    },
+    {
+      "description": "Major version bumps of infrastructure need a careful read of the release notes",
+      "matchUpdateTypes": ["major"],
+      "labels": ["renovate", "major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}

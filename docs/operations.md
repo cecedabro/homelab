@@ -13,11 +13,39 @@ unless they say "on k3s-cp-01".
    Apps keep working while sealed (their Secrets are already synced); only new/changed secrets wait.
 3. Check for stuck pods: `kubectl get pods -A | grep -vE 'Running|Completed'`.
 
+## Changing things (GitOps)
+Since 13 Oct 2026 Flux applies the repo. The normal way to change anything is:
+1. Edit the file (`apps/<app>/values.yaml`, a manifest, or a version in `apps/flux/helmreleases.yaml`).
+2. Commit + push to `main`. Flux picks it up within a minute (Helm values ConfigMaps trigger
+   the upgrade immediately). Force it now with:
+   ```bash
+   kubectl -n flux-system annotate gitrepository flux-system reconcile.fluxcd.io/requestedAt="$(date +%s)" --overwrite
+   ```
+3. Check: `kubectl -n flux-system get kustomization,helmrelease`: everything `True`.
+   A failure shows the reason in the STATUS column.
+
+**Don't** `helm upgrade` an app that Flux manages (see `apps/flux/helmreleases.yaml`); Flux
+would undo it at the next sync. Longhorn, MetalLB and Minecraft are still updated by hand.
+
+**Emergency: stop Flux from touching things** (e.g. while debugging by hand):
+```bash
+kubectl -n flux-system patch kustomization apps --type merge -p '{"spec":{"suspend":true}}'
+# ... and resume with "suspend":false
+```
+
+**Renovate PRs**: review the release notes linked in the PR, merge, and Flux deploys it.
+Majors only appear after you tick them on the "Dependency Dashboard" issue.
+
 ## Restarting an app
 ```bash
 kubectl -n media rollout restart deploy/jellyfin
 kubectl -n media rollout status deploy/jellyfin
 ```
+For **cloudflared, FlareSolverr and qBittorrent** (plain manifests applied by Flux) use
+`kubectl -n <ns> delete pod -l app=<name>` instead: Flux strips the `rollout restart`
+annotation on its next sync, which would restart the pod a second time. (cloudflared has 2
+replicas: delete one pod, wait until it's back, then the other.)
+
 Every app with a Longhorn volume uses the `Recreate` strategy, so the old pod releases the
 volume before the new one starts. **Don't** `kubectl delete pod` repeatedly: it restarts the
 attach/detach cycle. If a pod is stuck on its volume:

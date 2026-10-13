@@ -164,13 +164,33 @@ NodeLinkNotGigabit, PodCrashLooping, PodNotReady, OpenBaoSealed, PersistentVolum
 LonghornVolumeDegraded, LonghornNodeDown. They show at
 https://alertmanager.home.cedricschippers.dev; **no push notifications yet** (ntfy planned).
 
+### 9. GitOps: Flux and Renovate
+```
+ you edit a values.yaml / manifest ─┐
+ Renovate opens a version-bump PR ──┼─► GitHub main ──(Flux polls every minute)──► cluster
+                                    │
+ clusters/homelab/   Flux itself + Kustomization "apps"
+ apps/kustomization.yaml   what Flux applies: 45 plain manifests + 14 HelmReleases
+ apps/flux/   HelmRepositories + HelmReleases (values = apps/<app>/values.yaml via ConfigMaps)
+```
+- **Flux v2.9.5** (namespace `flux-system`) reads this public repo without credentials and
+  applies `apps/kustomization.yaml`. Helm apps are `HelmRelease`s that took over the releases
+  that used to be installed by hand (no reinstall, no restarts).
+- `prune: false` on the `apps` Kustomization: deleting a file from git does not (yet) delete
+  the object. Helm drift detection is off: hand patches on Helm-managed objects survive.
+- **Outside Flux** on purpose: Longhorn and MetalLB (values files incomplete), Traefik (owned
+  by k3s), the two Minecraft releases (hand-patched probes), PV/PVC manifests.
+- **Renovate** (`renovate.json`) watches HelmRelease chart versions, the Flux install manifest
+  and container images in manifests/values, and opens PRs on Saturdays. Major versions wait for
+  approval on the Dependency Dashboard issue; Minecraft is excluded.
+
 ## Known weak spots and the plan for them
 1. **k3s-cp-01 is a single point of failure** for the control plane and the datastore. The NAS
    data survives a dead laptop (separate drive caddy), but backups on the NAS don't survive a
    dead NAS. Plan: off-site copy to Backblaze B2, and HA control plane (see below).
 2. **The NAS volume has no redundancy** if the four drives are spanned/striped into one.
 3. **No alert notifications** until ntfy is wired into Alertmanager.
-4. **Updates are manual** (Renovate / Flux planned).
+4. **Longhorn, MetalLB and Minecraft are not under Flux yet**, and `prune` is still off.
 
 ### HA control plane (plan, not done)
 An extra weak node can serve as a control plane, but **2 control planes is worse than 1**:

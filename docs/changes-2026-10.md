@@ -73,3 +73,21 @@ Bedrock 1.26.52 only supports the NetherNet transport. Live only: `transport=net
 servers' `server.properties`, and both Deployments patched to TCP probes on 19132. A plain
 `helm upgrade` reverts the probes. The network path (NodePort, Pi relay, Fritz!Box) still has to
 be redesigned for TCP 19132 + a UDP range.
+
+## GitOps (Flux + Renovate)
+| Change | Where | Undo |
+|---|---|---|
+| Flux v2.9.5 installed, syncing `clusters/homelab` from GitHub | `clusters/homelab/` | see below |
+| 45 plain manifests applied by Flux (`prune: false`) | `apps/kustomization.yaml` | remove the file from the list (object stays) |
+| 14 Helm releases adopted as HelmReleases (no restarts) | `apps/flux/` | see below |
+| Renovate config | `renovate.json` (+ the Renovate GitHub App, installed by hand) | delete the file / uninstall the app |
+
+**Removing Flux without losing apps**: HelmReleases and Kustomizations have finalizers; deleting
+Flux's CRDs while they exist makes helm-controller *uninstall* the releases. So first:
+```bash
+kubectl -n flux-system patch kustomization apps flux-system --type merge -p '{"spec":{"suspend":true}}'
+for r in $(kubectl -n flux-system get helmrelease -o name); do kubectl -n flux-system patch $r --type merge -p '{"spec":{"suspend":true}}'; kubectl -n flux-system patch $r --type json -p '[{"op":"remove","path":"/metadata/finalizers"}]'; done
+for k in apps flux-system; do kubectl -n flux-system patch kustomization $k --type json -p '[{"op":"remove","path":"/metadata/finalizers"}]'; done
+kubectl delete -f clusters/homelab/flux-system/gotk-components.yaml
+```
+The Helm releases, their pods and all manifests stay; you're back to `helm upgrade` by hand.

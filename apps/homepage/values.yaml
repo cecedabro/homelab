@@ -61,6 +61,12 @@ config:
             description: Files, photos & calendar
             icon: nextcloud
             siteMonitor: http://192.168.50.108/status.php
+    - Projects:
+        - Ruilingen:
+            href: https://ruilingen.app
+            description: Shift-swap site for colleagues (public, via Cloudflare)
+            icon: mdi-swap-horizontal
+            siteMonitor: http://ruilingen.ruilingen.svc.cluster.local/healthz
     - Media:
         - Jellyfin:
             href: https://jellyfin.cedricschippers.dev

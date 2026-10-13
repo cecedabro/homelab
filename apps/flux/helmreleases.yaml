@@ -2,6 +2,10 @@
 # (same releaseName, storageNamespace = the app's namespace) and gets its values from the
 # app's values.yaml, turned into a ConfigMap by apps/kustomization.yaml (configMapGenerator).
 # Editing a values.yaml + push = Flux runs the helm upgrade. Renovate bumps `version:`.
+#
+# NOT managed by Flux (yet): longhorn and metallb (values files are partial), traefik (k3s
+# manages it), minecraft-* (hand-patched probes). Those stay on `helm upgrade` / k3s.
+---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata: {name: homepage, namespace: flux-system}
@@ -17,3 +21,214 @@ spec:
       sourceRef: {kind: HelmRepository, name: jameswynn}
   valuesFrom:
     - {kind: ConfigMap, name: homepage-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: grafana, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: grafana
+  targetNamespace: monitoring
+  storageNamespace: monitoring
+  chart:
+    spec:
+      chart: grafana
+      version: 10.5.15
+      sourceRef: {kind: HelmRepository, name: grafana}
+  valuesFrom:
+    - {kind: ConfigMap, name: grafana-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: prometheus, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: prometheus
+  targetNamespace: monitoring
+  storageNamespace: monitoring
+  chart:
+    spec:
+      chart: prometheus
+      version: 29.27.0
+      sourceRef: {kind: HelmRepository, name: prometheus-community}
+  valuesFrom:
+    - {kind: ConfigMap, name: prometheus-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: descheduler, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: descheduler
+  targetNamespace: kube-system
+  storageNamespace: kube-system
+  chart:
+    spec:
+      chart: descheduler
+      version: 0.37.0
+      sourceRef: {kind: HelmRepository, name: descheduler}
+  valuesFrom:
+    - {kind: ConfigMap, name: descheduler-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: external-secrets, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: external-secrets
+  targetNamespace: external-secrets
+  storageNamespace: external-secrets
+  chart:
+    spec:
+      chart: external-secrets
+      version: 2.12.0
+      sourceRef: {kind: HelmRepository, name: external-secrets}
+  valuesFrom:
+    - {kind: ConfigMap, name: external-secrets-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: cert-manager, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: cert-manager
+  targetNamespace: cert-manager
+  storageNamespace: cert-manager
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.21.2
+      sourceRef: {kind: HelmRepository, name: jetstack}
+  valuesFrom:
+    - {kind: ConfigMap, name: cert-manager-values, valuesKey: values.yaml}
+  # the startupapicheck post-install hook hangs helm (see apps/cert-manager/values.yaml)
+  install: {disableHooks: true}
+  upgrade: {disableHooks: true}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: radarr, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: radarr
+  targetNamespace: media
+  storageNamespace: media
+  chart:
+    spec:
+      chart: radarr
+      version: 1.29.0
+      sourceRef: {kind: HelmRepository, name: pree}
+  valuesFrom:
+    - {kind: ConfigMap, name: radarr-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: sonarr, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: sonarr
+  targetNamespace: media
+  storageNamespace: media
+  chart:
+    spec:
+      chart: sonarr
+      version: 1.15.0
+      sourceRef: {kind: HelmRepository, name: pree}
+  valuesFrom:
+    - {kind: ConfigMap, name: sonarr-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: readarr, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: readarr
+  targetNamespace: media
+  storageNamespace: media
+  chart:
+    spec:
+      chart: readarr
+      version: 1.17.1
+      sourceRef: {kind: HelmRepository, name: pree}
+  valuesFrom:
+    - {kind: ConfigMap, name: readarr-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: prowlarr, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: prowlarr
+  targetNamespace: media
+  storageNamespace: media
+  chart:
+    spec:
+      chart: prowlarr
+      version: 1.53.0
+      sourceRef: {kind: HelmRepository, name: pree}
+  valuesFrom:
+    - {kind: ConfigMap, name: prowlarr-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: jellyfin, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: jellyfin
+  targetNamespace: media
+  storageNamespace: media
+  chart:
+    spec:
+      chart: jellyfin
+      version: 3.2.0
+      sourceRef: {kind: HelmRepository, name: jellyfin}
+  valuesFrom:
+    - {kind: ConfigMap, name: jellyfin-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: nextcloud, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: nextcloud
+  targetNamespace: nextcloud
+  storageNamespace: nextcloud
+  chart:
+    spec:
+      chart: nextcloud
+      version: 9.1.3
+      sourceRef: {kind: HelmRepository, name: nextcloud}
+  valuesFrom:
+    - {kind: ConfigMap, name: nextcloud-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: portainer, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: portainer
+  targetNamespace: portainer
+  storageNamespace: portainer
+  chart:
+    spec:
+      chart: portainer
+      version: 239.3.1
+      sourceRef: {kind: HelmRepository, name: portainer}
+  valuesFrom:
+    - {kind: ConfigMap, name: portainer-values, valuesKey: values.yaml}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: openbao, namespace: flux-system}
+spec:
+  interval: 30m
+  releaseName: openbao
+  targetNamespace: openbao
+  storageNamespace: openbao
+  chart:
+    spec:
+      chart: openbao
+      version: 0.30.3
+      sourceRef: {kind: HelmRepository, name: openbao}
+  valuesFrom:
+    - {kind: ConfigMap, name: openbao-values, valuesKey: values.yaml}

@@ -1,5 +1,56 @@
 # Chart sources for the Flux HelmReleases (apps/flux/helmreleases.yaml).
+---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata: {name: jameswynn, namespace: flux-system}
-spec: {interval: 12h, url: https://jameswynn.github.io/helm-charts}
+spec: {interval: 12h, url: "https://jameswynn.github.io/helm-charts"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: grafana, namespace: flux-system}
+spec: {interval: 12h, url: "https://grafana.github.io/helm-charts"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: prometheus-community, namespace: flux-system}
+spec: {interval: 12h, url: "https://prometheus-community.github.io/helm-charts"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: descheduler, namespace: flux-system}
+spec: {interval: 12h, url: "https://kubernetes-sigs.github.io/descheduler/"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: external-secrets, namespace: flux-system}
+spec: {interval: 12h, url: "https://charts.external-secrets.io"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: jetstack, namespace: flux-system}
+spec: {interval: 12h, url: "https://charts.jetstack.io"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: pree, namespace: flux-system}
+spec: {interval: 12h, url: "https://charts.pree.dev"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: jellyfin, namespace: flux-system}
+spec: {interval: 12h, url: "https://jellyfin.github.io/jellyfin-helm"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: nextcloud, namespace: flux-system}
+spec: {interval: 12h, url: "https://nextcloud.github.io/helm/"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: portainer, namespace: flux-system}
+spec: {interval: 12h, url: "https://portainer.github.io/k8s/"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: openbao, namespace: flux-system}
+spec: {interval: 12h, url: "https://openbao.github.io/openbao-helm"}

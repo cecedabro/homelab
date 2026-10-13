@@ -14,7 +14,8 @@ unless they say "on k3s-cp-01".
 3. Check for stuck pods: `kubectl get pods -A | grep -vE 'Running|Completed'`.
 
 ## Changing things (GitOps)
-Since 13 Oct 2026 Flux applies the repo. The normal way to change anything is:
+Since 13 Oct 2026 Flux applies the repo. **Flux also commits to it** (image bumps for
+ruilingen, author `fluxcdbot`), so always `git pull` before you edit. The normal way to change anything is:
 1. Edit the file (`apps/<app>/values.yaml`, a manifest, or a version in `apps/flux/helmreleases.yaml`).
 2. Commit + push to `main`. Flux picks it up within a minute (Helm values ConfigMaps trigger
    the upgrade immediately). Force it now with:
@@ -128,6 +129,17 @@ kubectl -n kube-system get secret k3s-backup-passphrase -o jsonpath='{.data.pass
   connection "Jellyfin" in Settings → Connect triggers a Jellyfin scan after every import.
 - Jellyfin's realtime monitoring doesn't work over NFS; a manual "Scan All Libraries" always helps.
 - Duplicates: check `stat -c %h <file>` (2 = hardlinked, fine; 1 in both places = a copy).
+
+## Ruilingen (ruilingen.app)
+- **Deploy = release**: in the app repo, `git tag vX.Y.Z && git push origin vX.Y.Z`. CI builds image
+  `X.Y.Z`; Flux image automation picks it up within ~5 min, commits the bump here and deploys it.
+  Pushes to `main` build images but don't deploy.
+- Rollback: set the previous tag on the marked image line in `apps/ruilingen/deployment.yaml`
+  (pull first) and push. Migrations only go forward, so a schema change also needs the Longhorn
+  backup restored.
+- Restart: `kubectl -n ruilingen delete pod -l app=ruilingen` (1 replica, ~30 s downtime).
+- Admin login link: `kubectl -n ruilingen exec deploy/ruilingen -- python -m app.cli admin-link "Name"`.
+- Secrets: OpenBao `ruilingen/app` (`SESSION_SECRET`: don't rotate casually, it logs everyone out).
 
 ## Minecraft
 The Bedrock chart's probes are patched by hand (NetherNet transport). **Don't** run

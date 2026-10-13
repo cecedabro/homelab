@@ -1,12 +1,12 @@
 # Flux image automation for apps built in their own repo (currently: ruilingen).
 # 1. ImageRepository scans ghcr.io for new tags (public image, no credentials).
-# 2. ImagePolicy picks the newest build of `main` from its sortable tag main-<YYYYMMDDHHmmss>-<sha>.
+# 2. ImagePolicy picks the newest RELEASE: a vX.Y.Z git tag in the app repo builds image tag X.Y.Z.
+#    Pushes to main still build images (main-<timestamp>-<sha>) but no longer deploy.
 # 3. ImageUpdateAutomation rewrites the image line marked with {"$imagepolicy": ...} in this repo,
 #    commits and pushes to main; the normal Flux sync then deploys it.
 # Pushing uses its own GitRepository with a write deploy key (Secret flux-system/homelab-git-write,
 # created by hand, not in git). The main flux-system source stays read-only and anonymous.
-# To follow releases (v1.2.3 tags) instead of every main build, swap the ImagePolicy for the
-# commented semver one below.
+# Releases are deployed; to deploy every main build instead, see the comment in the ImagePolicy.
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata: {name: ruilingen, namespace: flux-system}
@@ -20,13 +20,12 @@ metadata: {name: ruilingen, namespace: flux-system}
 spec:
   imageRepositoryRef: {name: ruilingen}
   filterTags:
-    pattern: '^main-(?P<ts>[0-9]{14})-[a-f0-9]+$'
-    extract: '$ts'
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'   # only full releases, not "0.2", "latest", "main-..."
   policy:
-    numerical: {order: asc}
-# Releases only:
-#   policy:
-#     semver: {range: ">=0.1.0"}
+    semver: {range: ">=0.1.0"}
+# Every main build instead (continuous deployment):
+#   filterTags: {pattern: '^main-(?P<ts>[0-9]{14})-[a-f0-9]+$', extract: '$ts'}
+#   policy: {numerical: {order: asc}}
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository

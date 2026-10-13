@@ -12,7 +12,7 @@ kind: ImageRepository
 metadata: {name: ruilingen, namespace: flux-system}
 spec:
   image: ghcr.io/cecedabro/ruilingen-portaal
-  interval: 5m
+  interval: 1m   # check ghcr.io every minute so a release goes out within ~2-3 min of CI
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
@@ -40,7 +40,7 @@ apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata: {name: homelab, namespace: flux-system}
 spec:
-  interval: 5m
+  interval: 1m   # it also runs as soon as the ImagePolicy picks a new tag
   sourceRef: {kind: GitRepository, name: homelab-write}
   git:
     checkout:

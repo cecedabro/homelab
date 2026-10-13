@@ -27,3 +27,16 @@ persistence:
   storageClass: longhorn
   dataDir:
     enabled: true
+
+# Pinned to the image build running on 2026-10-13 (itzg build 2026-10-09) instead of :latest.
+# The Bedrock server version itself still follows VERSION (default LATEST), which clients need.
+image:
+  repository: itzg/minecraft-bedrock-server
+  tag: "latest@sha256:705d414670f9524c8258c86c5fa4873a0faf8fe0fbe99e75c2a0f2432bbed0e8"
+
+# !! 2026-10-13: Bedrock 1.26.52+ uses the NetherNet transport (TCP signaling on server-port,
+# then negotiated UDP ports). The chart's probes use `mc-monitor status-bedrock` (RakNet/UDP),
+# which can't reach a NetherNet server, so pods crash-loop. As a stopgap the live Deployments
+# were patched to tcpSocket probes on 19132 and server.properties got `transport=nethernet`.
+# A plain `helm upgrade` brings the RakNet probes back -> re-apply the patch, or move off this
+# chart. The NodePort (UDP) service and the relay still need redesigning for NetherNet.

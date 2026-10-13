@@ -1,0 +1,20 @@
+# Only the portfolio web app may talk to its Postgres. Everything else in the cluster
+# (other apps, a compromised pod) is refused. Enforced by k3s' built-in policy controller.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: portfolio-db-only-from-web
+  namespace: hva
+spec:
+  podSelector:
+    matchLabels:
+      app: portfolio-db
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: portfolio-web
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -1,0 +1,35 @@
+# OpenBao accepts connections only from:
+#  - External Secrets Operator (secret sync)
+#  - Homepage (status dot)
+#  - the LAN, via the UI LoadBalancer 192.168.50.114
+# MetalLB/kube-proxy SNATs LoadBalancer traffic that crosses nodes to the receiving node's
+# flannel address (10.42.<n>.0), so those /32s are allowed too. Add a node -> add its .0 here.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: openbao-restricted
+  namespace: openbao
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: openbao
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: external-secrets
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homepage
+        - ipBlock:
+            cidr: 192.168.50.0/24
+        - ipBlock: {cidr: 10.42.0.0/32}   # k3s-cp-01
+        - ipBlock: {cidr: 10.42.1.0/32}   # k3s-worker-01
+        - ipBlock: {cidr: 10.42.2.0/32}   # k3s-worker-02
+        - ipBlock: {cidr: 10.42.4.0/32}   # k3s-gpu-01
+        - ipBlock: {cidr: 10.42.5.0/32}   # k3s-uwv-01
+        - ipBlock: {cidr: 10.42.7.0/32}   # k3s-uwv-02
+      ports:
+        - protocol: TCP
+          port: 8200

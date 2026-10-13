@@ -121,7 +121,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 | Namespace | Apps | Notes |
 |---|---|---|
 | `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | all mount the NAS at `/media`; arr apps run as UID 1000 like qBittorrent so imports hardlink |
-| `monitoring` | Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics | 10 alert rules; no notification channel yet |
+| `monitoring` | Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics | 10 alert rules → ntfy |
 | `nextcloud` | Nextcloud | admin from OpenBao |
 | `homepage` | Homepage dashboard | status dot per app |
 | `openbao`, `external-secrets` | secrets | see above |
@@ -162,7 +162,8 @@ Prometheus scrapes nodes, kube-state-metrics and Longhorn. Alert rules (in
 `apps/prometheus/values.yaml`): NodeDown, NodeDiskAlmostFull, NodeMemoryPressure,
 NodeLinkNotGigabit, PodCrashLooping, PodNotReady, OpenBaoSealed, PersistentVolumeAlmostFull,
 LonghornVolumeDegraded, LonghornNodeDown. They show at
-https://alertmanager.home.cedricschippers.dev; **no push notifications yet** (ntfy planned).
+https://alertmanager.home.cedricschippers.dev and are **pushed to the ntfy app** (public ntfy.sh, random
+topic in Secret `monitoring/alertmanager-ntfy`; `critical` alerts arrive as urgent).
 
 ### 9. GitOps: Flux and Renovate
 ```
@@ -189,7 +190,6 @@ https://alertmanager.home.cedricschippers.dev; **no push notifications yet** (nt
    data survives a dead laptop (separate drive caddy), but backups on the NAS don't survive a
    dead NAS. Plan: off-site copy to Backblaze B2, and HA control plane (see below).
 2. **The NAS volume has no redundancy** if the four drives are spanned/striped into one.
-3. **No alert notifications** until ntfy is wired into Alertmanager.
 4. **Longhorn, MetalLB and Minecraft are not under Flux yet**, and `prune` is still off.
 
 ### HA control plane (plan, not done)

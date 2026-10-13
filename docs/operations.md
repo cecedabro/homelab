@@ -141,4 +141,5 @@ bottom of `apps/minecraft/values.yaml`.
 | Grafana admin | OpenBao `monitoring/grafana` |
 | Nextcloud admin | OpenBao `nextcloud/nextcloud-admin` |
 | Longhorn/Prometheus/Alertmanager login | `kubectl -n monitoring get secret dashboard-login -o jsonpath='{.data.password}' \| base64 -d` |
+| ntfy topic (alerts) | `kubectl -n monitoring get secret alertmanager-ntfy -o jsonpath='{.data.url}' \| base64 -d` (topic = the part after ntfy.sh/) |
 | k3s backup passphrase | `kube-system/k3s-backup-passphrase` (+ password manager) |

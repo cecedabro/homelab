@@ -66,6 +66,7 @@ change was made in the cluster and is not (fully) expressed in this repo.
 | Change | Undo |
 |---|---|
 | Grafana: Prometheus datasource provisioned | remove `datasources:` from `apps/grafana/values.yaml` |
+| Alertmanager → ntfy (Secret `monitoring/alertmanager-ntfy`, live only) | remove `alertmanager.config`/`extraSecretMounts` from `apps/prometheus/values.yaml` |
 | 10 alert rules + Longhorn metrics scrape | remove `serverFiles:` / `extraScrapeConfigs:` from `apps/prometheus/values.yaml` |
 
 ## Minecraft (stopgap, still to be finished)

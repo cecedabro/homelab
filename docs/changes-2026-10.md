@@ -92,3 +92,10 @@ for k in apps flux-system; do kubectl -n flux-system patch kustomization $k --ty
 kubectl delete -f clusters/homelab/flux-system/gotk-components.yaml
 ```
 The Helm releases, their pods and all manifests stay; you're back to `helm upgrade` by hand.
+
+## Ruilingen (13 Oct)
+| Change | Where | Undo |
+|---|---|---|
+| Ruilingen app: namespace, PVC, Deployment, ExternalSecret, NetworkPolicy | `apps/ruilingen/`, `apps/network-policies/ruilingen.yaml` | remove from `apps/kustomization.yaml` and delete the namespace (prune is off) |
+| Flux image automation (follows `main-<timestamp>-<sha>` builds) | `apps/flux/image-automation.yaml` | remove it from `apps/kustomization.yaml`; delete the objects |
+| Write deploy key "flux-image-automation (k3s homelab)" on GitHub + Secret `flux-system/homelab-git-write` | GitHub repo settings → Deploy keys; live Secret | delete the deploy key on GitHub and the Secret |

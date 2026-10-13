@@ -130,6 +130,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 | `hva`, `portfolio` | portfolio site, web app + Postgres | deployed from the portfolio repo |
 | `minecraft` | 2× Bedrock server | NetherNet migration pending (see apps/minecraft) |
 | `portainer` | Portainer | cluster-admin: guard its password |
+| `ruilingen` | Ruilingen (shift-swap site, own repo `cecedabro/ruilingen-portaal`) | 1 replica (SQLite on RWO); public at ruilingen.app via the tunnel; image bumped by Flux image automation |
 
 ### 6. How the media stack clicks together
 ```
@@ -181,6 +182,9 @@ topic in Secret `monitoring/alertmanager-ntfy`; `critical` alerts arrive as urge
   the object. Helm drift detection is off: hand patches on Helm-managed objects survive.
 - **Outside Flux** on purpose: Longhorn and MetalLB (values files incomplete), Traefik (owned
   by k3s), the two Minecraft releases (hand-patched probes), PV/PVC manifests.
+- **Flux image automation** (`apps/flux/image-automation.yaml`): for apps built in their own repo
+  (ruilingen) Flux watches ghcr.io, rewrites the marked image line to the newest `main` build and
+  commits that to this repo with a write deploy key (Secret `flux-system/homelab-git-write`).
 - **Renovate** (`renovate.json`) watches HelmRelease chart versions, the Flux install manifest
   and container images in manifests/values, and opens PRs on Saturdays. Major versions wait for
   approval on the Dependency Dashboard issue; Minecraft is excluded.

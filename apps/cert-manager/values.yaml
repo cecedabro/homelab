@@ -1,0 +1,30 @@
+# helm upgrade --install cert-manager jetstack/cert-manager --version v1.21.2 \
+#   -n cert-manager -f apps/cert-manager/values.yaml --no-hooks
+# (--no-hooks: with Helm 4 the startupapicheck post-install hook completes but helm keeps waiting)
+crds:
+  enabled: true
+
+# Resolve the ACME DNS-01 TXT record via public resolvers, not the home router
+dns01RecursiveNameserversOnly: true
+dns01RecursiveNameservers: "1.1.1.1:53,9.9.9.9:53"
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+cainjector:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi

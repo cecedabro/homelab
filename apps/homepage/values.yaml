@@ -21,78 +21,78 @@ config:
   services:
     - Cluster Management:
         - Portainer:
-            href: https://192.168.50.11:30779
+            href: https://portainer.home.cedricschippers.dev
             description: Container & pod management
             icon: portainer
             siteMonitor: https://portainer.portainer.svc.cluster.local:9443
         - Longhorn:
-            href: http://192.168.50.104
+            href: https://longhorn.home.cedricschippers.dev
             description: Distributed storage
             icon: longhorn
             siteMonitor: http://longhorn-frontend.longhorn-system.svc.cluster.local
         - Grafana:
-            href: http://192.168.50.112
+            href: https://grafana.home.cedricschippers.dev
             description: Monitoring dashboards
             icon: grafana
             siteMonitor: http://grafana.monitoring.svc.cluster.local
         - Prometheus:
-            href: http://192.168.50.113
-            description: Metrics & queries (LAN only, no login)
+            href: https://prometheus.home.cedricschippers.dev
+            description: "Metrics & queries (login in the dashboard-login secret)"
             icon: prometheus
             siteMonitor: http://prometheus-server.monitoring.svc.cluster.local/-/healthy
         - OpenBao:
-            href: http://192.168.50.114:8200/ui/
+            href: https://openbao.home.cedricschippers.dev/ui/
             description: Secrets manager (synced into the cluster by External Secrets)
             icon: openbao
             # /sys/health returns 503 while sealed, so a red dot means: go unseal it
             siteMonitor: http://openbao.openbao.svc.cluster.local:8200/v1/sys/health
     - Gaming:
         - Minecraft Bedrock:
-            href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
+            href: https://portainer.home.cedricschippers.dev/#!/1/kubernetes/helm/minecraft/minecraft-bedrock?tab=resources
             description: "Connect via the relay, port 19132 (address in password manager)"
             icon: minecraft
         - Minecraft Creative:
-            href: https://192.168.50.11:30779/#!/1/kubernetes/helm/minecraft/minecraft-creative?tab=resources
+            href: https://portainer.home.cedricschippers.dev/#!/1/kubernetes/helm/minecraft/minecraft-creative?tab=resources
             description: "Connect via the relay, port 19133 (address in password manager)"
             icon: minecraft
     - Cloud:
         - Nextcloud:
-            href: http://192.168.50.108
+            href: https://nextcloud.home.cedricschippers.dev
             description: Files, photos & calendar
             icon: nextcloud
             siteMonitor: http://192.168.50.108/status.php
     - Media:
         - Jellyfin:
-            href: http://jellyfin.cedricschippers.dev
-            description: "Media streaming via Cloudflare (LAN: http://192.168.50.102:8096)"
+            href: https://jellyfin.cedricschippers.dev
+            description: "Media streaming via Cloudflare (home: https://jellyfin.home.cedricschippers.dev)"
             icon: jellyfin
             siteMonitor: http://jellyfin.media.svc.cluster.local:8096
         - Jellyfin (LAN):
-            href: http://192.168.50.102:8096
-            description: Direct on the home network, no Cloudflare hop
+            href: https://jellyfin.home.cedricschippers.dev
+            description: Direct on the home network (HTTPS), no Cloudflare hop
             icon: jellyfin
         - qBittorrent:
-            href: http://192.168.50.111:8080
+            href: https://qbittorrent.home.cedricschippers.dev
             description: Download client
             icon: qbittorrent
             siteMonitor: http://qbittorrent.media.svc.cluster.local:8080
         - Prowlarr:
-            href: http://192.168.50.105:9696
+            href: https://prowlarr.home.cedricschippers.dev
             description: Indexer manager
             icon: prowlarr
             siteMonitor: http://prowlarr.media.svc.cluster.local:9696
         - Radarr:
-            href: http://192.168.50.106:7878
+            href: https://radarr.home.cedricschippers.dev
             description: Movie automation
             icon: radarr
             siteMonitor: http://radarr.media.svc.cluster.local:7878
         - Sonarr:
-            href: http://192.168.50.110:8989
+            href: https://sonarr.home.cedricschippers.dev
             description: TV & anime automation
             icon: sonarr
             siteMonitor: http://sonarr.media.svc.cluster.local:8989
         - Readarr:
-            href: http://192.168.50.103:8787
+            href: https://readarr.home.cedricschippers.dev
             description: Ebook automation
             icon: readarr
             siteMonitor: http://readarr.media.svc.cluster.local:8787
@@ -121,7 +121,7 @@ kubernetes:
 
 env:
   - name: HOMEPAGE_ALLOWED_HOSTS
-    value: "192.168.50.101:3000"
+    value: "192.168.50.101:3000,home.cedricschippers.dev,homepage.home.cedricschippers.dev"
 # Requests/limits from 7-day Prometheus peaks (2026-10-13): CPU request only (no CPU limit, avoids throttling),
 # memory request + limit so one app cannot starve the node.
 resources:

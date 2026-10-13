@@ -7,6 +7,7 @@ nextcloud:
     passwordKey: nextcloud-password
   trustedDomains:
     - 192.168.50.108
+    - nextcloud.home.cedricschippers.dev
     - localhost
     - 10.42.0.0/16
 
@@ -18,8 +19,13 @@ nextcloud:
           0 => 'localhost',
           1 => '192.168.50.108',
           2 => '10.42.0.0/16',
+          3 => 'nextcloud.home.cedricschippers.dev',
         ),
-        'overwriteprotocol' => 'http',
+        // Traefik terminates TLS for nextcloud.home.cedricschippers.dev; trusting the pod
+        // network lets Nextcloud read X-Forwarded-Proto, so https (via Traefik) and plain http
+        // (via 192.168.50.108) both generate correct links. No fixed overwriteprotocol.
+        'trusted_proxies' => array('10.42.0.0/16'),
+        'forwarded_for_headers' => array('HTTP_X_FORWARDED_FOR'),
       );
 
   extraVolumes:

@@ -1,0 +1,134 @@
+# Internal HTTPS names for every app with a UI: https://<app>.home.cedricschippers.dev
+# DNS: *.home.cedricschippers.dev -> 192.168.50.100 (Traefik, DNS-only record in Cloudflare),
+# so these names only work on the home network. TLS comes from the home-wildcard certificate
+# (Traefik's default cert, see home-certificate.yaml). Public sites stay on the Cloudflare tunnel.
+#
+# Dashboards without their own login get basic auth (secret dashboard-basic-auth, created by
+# hand in longhorn-system and monitoring, key "users" only). The plaintext login (user "admin")
+# is in the dashboard-login secret in the same namespaces.
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata: {name: basic-auth, namespace: longhorn-system}
+spec:
+  basicAuth: {secret: dashboard-basic-auth, removeHeader: true}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata: {name: basic-auth, namespace: monitoring}
+spec:
+  basicAuth: {secret: dashboard-basic-auth, removeHeader: true}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+  namespace: homepage
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: homepage, port: {number: 3000}}}}]}
+    - host: homepage.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: homepage, port: {number: 3000}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: media
+  namespace: media
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: jellyfin.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: jellyfin, port: {number: 8096}}}}]}
+    - host: sonarr.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: sonarr, port: {number: 8989}}}}]}
+    - host: radarr.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: radarr, port: {number: 7878}}}}]}
+    - host: prowlarr.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: prowlarr, port: {number: 9696}}}}]}
+    - host: readarr.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: readarr, port: {number: 8787}}}}]}
+    - host: qbittorrent.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: qbittorrent, port: {number: 8080}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: grafana.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: grafana, port: {number: 80}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: monitoring
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-basic-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: prometheus.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: prometheus-server, port: {number: 80}}}}]}
+    - host: alertmanager.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: prometheus-alertmanager, port: {number: 9093}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: longhorn-system-basic-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: longhorn.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: longhorn-frontend, port: {number: 80}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openbao
+  namespace: openbao
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: openbao.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: openbao-ui, port: {number: 8200}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: portainer
+  namespace: portainer
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: portainer.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: portainer, port: {number: 9000}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud
+  namespace: nextcloud
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: nextcloud.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: nextcloud, port: {number: 80}}}}]}

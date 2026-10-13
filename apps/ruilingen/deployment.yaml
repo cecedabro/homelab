@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ruilingen
-          image: ghcr.io/cecedabro/ruilingen-portaal:0.3.0 # {"$imagepolicy": "flux-system:ruilingen"}
+          image: ghcr.io/cecedabro/ruilingen-portaal:0.4.0 # {"$imagepolicy": "flux-system:ruilingen"}
           ports:
             - name: http
               containerPort: 8000

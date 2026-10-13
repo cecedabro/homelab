@@ -55,3 +55,89 @@ prometheus-pushgateway:
       memory: 32Mi
     limits:
       memory: 128Mi
+
+# Scrape Longhorn's own metrics (volume robustness, node/disk state) for the alerts below
+extraScrapeConfigs: |
+  - job_name: longhorn
+    kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names: [longhorn-system]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        regex: longhorn-backend;manager
+        action: keep
+
+# Homelab alert rules. Visible in Prometheus (http://192.168.50.113/alerts) and Alertmanager;
+# a notification channel (Telegram/Discord/ntfy/email) still has to be wired into Alertmanager.
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: nodes
+        rules:
+          - alert: NodeDown
+            expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+            for: 5m
+            labels: {severity: critical}
+            annotations:
+              summary: "Node {{ $labels.node }} is not Ready"
+          - alert: NodeDiskAlmostFull
+            expr: (node_filesystem_avail_bytes{fstype="ext4",mountpoint!~"/boot|/var/lib/kubelet.*"} / node_filesystem_size_bytes) < 0.15
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: "{{ $labels.node }} {{ $labels.mountpoint }} has {{ $value | humanizePercentage }} free"
+          - alert: NodeMemoryPressure
+            expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+            for: 10m
+            labels: {severity: warning}
+            annotations:
+              summary: "{{ $labels.node }} has {{ $value | humanizePercentage }} memory available"
+          - alert: NodeLinkNotGigabit
+            # the NAS link silently ran at 100 Mbit/s for months
+            expr: node_network_speed_bytes{device=~"en.*|eth.*"} * 8 < 1e9 and node_network_up{device=~"en.*|eth.*"} == 1
+            for: 10m
+            labels: {severity: warning}
+            annotations:
+              summary: "{{ $labels.node }} {{ $labels.device }} links at {{ $value | humanize }}bit/s"
+      - name: workloads
+        rules:
+          - alert: PodCrashLooping
+            expr: increase(kube_pod_container_status_restarts_total[30m]) > 3
+            labels: {severity: warning}
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) restarted {{ $value | humanize }}x in 30m"
+          - alert: PodNotReady
+            expr: sum by (namespace, pod) (kube_pod_status_ready{condition="true"} == 0) * on (namespace, pod) group_left() (sum by (namespace, pod) (kube_pod_status_phase{phase=~"Running|Pending"}) > 0)
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.pod }} not ready for 15m"
+          - alert: OpenBaoSealed
+            # readiness probe runs `bao status`, which fails while sealed
+            expr: kube_pod_status_ready{namespace="openbao",condition="true"} == 0
+            for: 2m
+            labels: {severity: critical}
+            annotations:
+              summary: "OpenBao is sealed or down: unseal it (secrets stop syncing)"
+      - name: storage
+        rules:
+          - alert: PersistentVolumeAlmostFull
+            expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.10
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has {{ $value | humanizePercentage }} free"
+          - alert: LonghornVolumeDegraded
+            # robustness: 1=healthy 2=degraded 3=faulted
+            expr: longhorn_volume_robustness >= 2
+            for: 15m
+            labels: {severity: warning}
+            annotations:
+              summary: "Longhorn volume {{ $labels.volume }} is {{ if eq $value 3.0 }}FAULTED{{ else }}degraded{{ end }}"
+          - alert: LonghornNodeDown
+            expr: longhorn_node_status{condition="ready"} == 0
+            for: 5m
+            labels: {severity: critical}
+            annotations:
+              summary: "Longhorn node {{ $labels.node }} is not ready"

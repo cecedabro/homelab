@@ -1,0 +1,116 @@
+# Operations runbook
+
+Everyday tasks. Commands run from a machine with `kubectl` access to the cluster (your Mac),
+unless they say "on k3s-cp-01".
+
+## After a reboot / power outage
+1. Check nodes: `kubectl get nodes` (all `Ready`).
+2. **Unseal OpenBao**: the Homepage dot for OpenBao is red while sealed. Run three times, with
+   three different unseal keys from the password manager:
+   ```bash
+   kubectl -n openbao exec -it openbao-0 -- bao operator unseal
+   ```
+   Apps keep working while sealed (their Secrets are already synced); only new/changed secrets wait.
+3. Check for stuck pods: `kubectl get pods -A | grep -vE 'Running|Completed'`.
+
+## Restarting an app
+```bash
+kubectl -n media rollout restart deploy/jellyfin
+kubectl -n media rollout status deploy/jellyfin
+```
+Every app with a Longhorn volume uses the `Recreate` strategy, so the old pod releases the
+volume before the new one starts. **Don't** `kubectl delete pod` repeatedly: it restarts the
+attach/detach cycle. If a pod is stuck on its volume:
+```bash
+kubectl -n media scale deploy/radarr --replicas=0
+# wait until the Longhorn volume shows "detached"
+kubectl -n media scale deploy/radarr --replicas=1
+```
+"already mounted or mount point busy" on a new node: check `multipathd` on that node
+(Longhorn's iSCSI devices must be blacklisted, see "Adding a node").
+
+## Node maintenance (reboot, cable swap)
+```bash
+kubectl drain <node> --ignore-daemonsets --delete-emptydir-data --timeout=5m
+# reboot / maintenance (on the node)
+kubectl uncordon <node>
+```
+For `k3s-cp-01`: a short unplug (< 1 min) is harmless; beyond ~5 min Kubernetes starts
+rescheduling pods. `kubectl` doesn't work on worker nodes (no kubeconfig there).
+
+## Adding a node
+1. Install k3s agent (or server, see the HA plan in architecture.md).
+2. **Blacklist Longhorn devices for multipath** (Ubuntu ships multipathd):
+   ```bash
+   printf 'blacklist {\n    devnode "^sd[a-z0-9]+"\n}\n' | sudo tee -a /etc/multipath.conf
+   sudo systemctl restart multipathd && sudo multipath -F
+   ```
+3. Check the link speed: `sudo ethtool <iface> | grep Speed` → `1000Mb/s` (alert NodeLinkNotGigabit).
+4. Add its flannel addresses (`10.42.<n>.0/32` and `.1/32`, see `kubectl get node -o
+   jsonpath='{.spec.podCIDR}'`) to `apps/network-policies/*.yaml` and `apps/openbao/networkpolicy.yaml`.
+
+## Secrets
+Add or change a value in the OpenBao UI (https://openbao.home.cedricschippers.dev, token
+login), then either wait up to an hour or force the sync:
+```bash
+kubectl -n <ns> annotate externalsecret <name> force-sync=$(date +%s) --overwrite
+```
+Apps that read a secret only at start (Grafana admin, Nextcloud admin, gluetun, cloudflared)
+need a restart; Grafana and Nextcloud also need their password reset inside the app (commands
+in their `externalsecret.yaml`).
+New secret: put it in OpenBao, copy an existing `externalsecret.yaml`, change namespace/name/
+path/keys, apply, and check `kubectl get externalsecret -A` shows `SecretSynced`.
+
+## Exposing an app internally (HTTPS name)
+Add a rule to `apps/traefik/ingresses.yaml`:
+```yaml
+- host: <app>.home.cedricschippers.dev
+  http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: <svc>, port: {number: <port>}}}}]}
+```
+The wildcard certificate and DNS already cover every `*.home` name. For an app without its own
+login, add the annotation
+`traefik.ingress.kubernetes.io/router.middlewares: <ns>-basic-auth@kubernetescrd` and create
+the middleware + secret in that namespace (see the existing ones). If the namespace has a
+NetworkPolicy, Traefik is already allowed.
+
+## Backups and restores
+| What | Where | Check |
+|---|---|---|
+| Longhorn volumes (daily 02:00, 7 kept) | NAS `longhorn-backups/` | Longhorn UI → Backup |
+| k3s datastore (daily 01:30, 14 kept, encrypted) | NAS `k3s-backups/` | `kubectl -n kube-system get jobs` |
+
+**Restore a Longhorn volume**: Longhorn UI → Backup → pick the backup → Restore (to a new
+volume), then create a PV/PVC for it (or use "Create PV/PVC" in the UI) and point the app at it.
+
+**Restore the k3s datastore** (cp-01 lost its disk): reinstall k3s on cp-01, stop it, then
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -in /mnt/media-storage/k3s-backups/k3s-<ts>.tar.gz.enc | tar xz
+sudo cp state.db /var/lib/rancher/k3s/server/db/state.db
+sudo cp token /var/lib/rancher/k3s/server/token
+sudo systemctl start k3s
+```
+The passphrase is the `k3s-backup-passphrase` secret: keep a copy in the password manager,
+otherwise the backups can't be opened when the cluster is gone:
+```bash
+kubectl -n kube-system get secret k3s-backup-passphrase -o jsonpath='{.data.passphrase}' | base64 -d; echo
+```
+
+## Media stack
+- Movies/series that downloaded but don't show up: Radarr/Sonarr → Activity → Queue. The
+  connection "Jellyfin" in Settings → Connect triggers a Jellyfin scan after every import.
+- Jellyfin's realtime monitoring doesn't work over NFS; a manual "Scan All Libraries" always helps.
+- Duplicates: check `stat -c %h <file>` (2 = hardlinked, fine; 1 in both places = a copy).
+
+## Minecraft
+The Bedrock chart's probes are patched by hand (NetherNet transport). **Don't** run
+`helm upgrade` on the minecraft releases without re-applying the patch, see the note at the
+bottom of `apps/minecraft/values.yaml`.
+
+## Credentials (where to find them)
+| What | Where |
+|---|---|
+| OpenBao root token, unseal keys | password manager only |
+| Grafana admin | OpenBao `monitoring/grafana` |
+| Nextcloud admin | OpenBao `nextcloud/nextcloud-admin` |
+| Longhorn/Prometheus/Alertmanager login | `kubectl -n monitoring get secret dashboard-login -o jsonpath='{.data.password}' \| base64 -d` |
+| k3s backup passphrase | `kube-system/k3s-backup-passphrase` (+ password manager) |

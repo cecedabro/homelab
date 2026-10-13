@@ -1,10 +1,12 @@
 # Radarr
 
-Same as Prowlarr — image runs as UID/GID 65534 (nobody).
-After first install, before letting the pod start, fix Longhorn volume ownership:
+Runs as **UID/GID 1000** (`podSecurityContext` in `values.yaml`), the same user qBittorrent
+writes downloads as. That is what lets imports *hardlink* from `/media/downloads` into
+`/media/movies` instead of silently copying (with `fs.protected_hardlinks=1` a user can't
+hardlink another user's 0644 file). Sonarr and Readarr use the same setting.
 
-kubectl scale deployment radarr -n media --replicas=0
-kubectl run -n media fix-perms --restart=Never --image=busybox \
-  --overrides='{"spec":{"containers":[{"name":"fix-perms","image":"busybox","command":["sh","-c","chown -R 65534:65534 /config"],"volumeMounts":[{"name":"config","mountPath":"/config"}]}],"volumes":[{"name":"config","persistentVolumeClaim":{"claimName":"radarr-config"}}]}}'
-kubectl delete pod fix-perms -n media
-kubectl scale deployment radarr -n media --replicas=1
+`fsGroup: 1000` keeps the existing config volume (originally created as 65534/nobody) writable,
+so no manual chown is needed anymore.
+
+Root folder: `/media/movies`. Download client: qBittorrent at `192.168.50.111:8080`, category
+`radarr`. Settings → Connect → "Jellyfin" triggers a library scan after each import.

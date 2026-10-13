@@ -6,7 +6,7 @@ Sleep (from Z400 itself):
 sudo systemctl suspend
 
 Wake (from any machine on the network):
-wakeonlan -i 192.168.50.255 18:a9:05:c1:f2:45
+wakeonlan -i 192.168.xx.xxx 18:a9:05:c1:f2:45
 
 Wake time from sleep: near-instant (a few seconds)
 Wake time from full poweroff: 60-90+ seconds (avoid using poweroff for this node)

@@ -1,0 +1,7 @@
+
+
+kubectl drain k3s-worker-01 --ignore-daemonsets --delete-emptydir-data
+
+kubectl drain k3s-worker-02 --ignore-daemonsets --delete-emptydir-data
+
+kubectl drain k3s-gpu-01 --ignore-daemonsets --delete-emptydir-data

@@ -1,6 +1,6 @@
-# Longhorn release: helm -n longhorn-system (chart longhorn/longhorn 1.12.0)
-# Settings below were applied live via `kubectl patch settings.longhorn.io` on 2026-10-12.
-# defaultSettings only seed a fresh install; keep this file in sync with the live settings.
+# Longhorn (chart longhorn/longhorn 1.12.0), managed by Flux (apps/flux/helmreleases.yaml).
+# defaultSettings land in Longhorn's default-setting ConfigMap and are applied by longhorn-manager,
+# so this file is the source of truth for these settings; others can still be changed in the UI.
 service:
   ui:
     # Internal only: https://longhorn.home.cedricschippers.dev (Traefik + basic auth).

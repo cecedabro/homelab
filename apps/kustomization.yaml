@@ -79,3 +79,4 @@ configMapGenerator:
   - {name: portainer-values, namespace: flux-system, files: [values.yaml=portainer/values.yaml]}
   - {name: openbao-values, namespace: flux-system, files: [values.yaml=openbao/values.yaml]}
   - {name: metallb-values, namespace: flux-system, files: [values.yaml=metallb/values.yaml]}
+  - {name: longhorn-values, namespace: flux-system, files: [values.yaml=longhorn/values.yaml]}

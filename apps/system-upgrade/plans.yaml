@@ -4,6 +4,13 @@
 # one node at a time (cordon + drain), each node replacing its own k3s binary and restarting.
 # Same version as the nodes already run = nothing happens.
 #
+# Upgrades are OPT-IN per node: a plan only touches nodes labelled homelab/k3s-upgrade=allowed.
+# (A new plan otherwise runs on every node once, draining all workers even for the same version.)
+# Roll out after merging the Renovate PR (server first, agents wait for it automatically):
+#   kubectl label nodes --all homelab/k3s-upgrade=allowed
+#   kubectl -n system-upgrade get plans,jobs -w        # until both plans are complete
+#   kubectl label nodes --all homelab/k3s-upgrade-
+#
 # Expect during an upgrade: single-replica apps restart once when their node drains, and if the
 # drained node runs openbao-0 OpenBao comes back SEALED (alert OpenBaoSealed): unseal it.
 apiVersion: upgrade.cattle.io/v1
@@ -17,6 +24,7 @@ spec:
   nodeSelector:
     matchExpressions:
       - {key: node-role.kubernetes.io/control-plane, operator: Exists}
+      - {key: homelab/k3s-upgrade, operator: In, values: [allowed]}
   tolerations:
     - {operator: Exists}
   serviceAccountName: system-upgrade
@@ -36,6 +44,7 @@ spec:
   nodeSelector:
     matchExpressions:
       - {key: node-role.kubernetes.io/control-plane, operator: DoesNotExist}
+      - {key: homelab/k3s-upgrade, operator: In, values: [allowed]}
   tolerations:
     - {operator: Exists}
   serviceAccountName: system-upgrade

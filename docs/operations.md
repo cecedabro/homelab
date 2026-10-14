@@ -127,7 +127,11 @@ kubectl -n kube-system get secret k3s-backup-passphrase -o jsonpath='{.data.pass
 ## Off-site backups (Backblaze B2)
 Nightly 05:00 `kube-system/offsite-backup` copies `/mnt/media-storage/longhorn-backups` and
 `/mnt/media-storage/k3s-backups` to B2, encrypted with rclone crypt (OpenBao `backup/b2`).
-Alerts: `BackupJobFailed`, `OffsiteBackupStale` (no success for 2 days). Run it now:
+Alerts: `BackupJobFailed`, `OffsiteBackupStale` (no success for 2 days).
+Cost: ~$7/TB/month, first 10 GB free; ~30 GB of backups is about $0.15/month. Backblaze account caps
+(Caps & Alerts): storage $0.10/day (~440 GB), download $0.50/day (~50 GB), alerts by mail at 75%/100%.
+Hitting the storage cap makes uploads fail with `403 storage_cap_exceeded`: raise the cap.
+Run it now:
 ```bash
 kubectl -n kube-system create job --from=cronjob/offsite-backup offsite-backup-manual
 ```

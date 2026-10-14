@@ -46,9 +46,11 @@ spec:
                     n=$(find "/nas/$d" -type f | head -50 | wc -l)
                     if [ "$n" -lt 2 ]; then echo "REFUSING: /nas/$d looks empty ($n files), NAS unmounted or broken?"; exit 1; fi
                     echo "== $d"
+                    # no pipes here: rclone's exit code must fail the job (an earlier "| grep || true"
+                    # hid a storage-cap error). NOTICE level keeps the log short; errors still show.
                     rclone sync "/nas/$d" "offsite:$d" --fast-list --transfers 4 --checkers 8 \
-                      --max-delete 1000 --stats 60s --stats-one-line -v 2>&1 | grep -vE ' INFO  : .*: (Copied|Deleted)' || true
-                    rclone check "/nas/$d" "offsite:$d" --one-way --size-only -q
+                      --max-delete 1000 --log-level NOTICE --stats 5m --stats-one-line --stats-log-level NOTICE
+                    rclone check "/nas/$d" "offsite:$d" --one-way --size-only --log-level ERROR
                   done
                   echo "offsite backup ok: $(date -u +%FT%TZ)"
               envFrom:

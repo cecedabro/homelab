@@ -1,0 +1,7 @@
+# system-upgrade-controller v0.20.2 (release manifests, unmodified) + the k3s upgrade plans.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - crd.yaml
+  - system-upgrade-controller.yaml
+  - plans.yaml

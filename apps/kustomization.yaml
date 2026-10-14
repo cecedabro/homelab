@@ -29,6 +29,7 @@ resources:
   - flaresolverr/deployment.yaml
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
+  - system-upgrade
   - backup-offsite/cronjob.yaml
   - minecraft/cronjob-restart.yaml
   - ruilingen/namespace.yaml

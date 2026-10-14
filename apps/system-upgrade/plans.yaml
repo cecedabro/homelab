@@ -1,0 +1,55 @@
+# k3s upgrade plans for the system-upgrade-controller (k3s' own upgrade mechanism).
+# The version below is THE k3s version of the cluster. Renovate opens a PR when a newer k3s
+# release exists; merging it makes the controller upgrade the server first, then the agents,
+# one node at a time (cordon + drain), each node replacing its own k3s binary and restarting.
+# Same version as the nodes already run = nothing happens.
+#
+# Expect during an upgrade: single-replica apps restart once when their node drains, and if the
+# drained node runs openbao-0 OpenBao comes back SEALED (alert OpenBaoSealed): unseal it.
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: k3s-server
+  namespace: system-upgrade
+spec:
+  concurrency: 1
+  cordon: true
+  nodeSelector:
+    matchExpressions:
+      - {key: node-role.kubernetes.io/control-plane, operator: Exists}
+  tolerations:
+    - {operator: Exists}
+  serviceAccountName: system-upgrade
+  upgrade:
+    image: rancher/k3s-upgrade
+  # renovate: datasource=github-releases depName=k3s-io/k3s
+  version: v1.35.5+k3s1
+---
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: k3s-agent
+  namespace: system-upgrade
+spec:
+  concurrency: 1
+  cordon: true
+  nodeSelector:
+    matchExpressions:
+      - {key: node-role.kubernetes.io/control-plane, operator: DoesNotExist}
+  tolerations:
+    - {operator: Exists}
+  serviceAccountName: system-upgrade
+  prepare:
+    # wait until the server runs the new version before touching the agents
+    image: rancher/k3s-upgrade
+    args: ["prepare", "k3s-server"]
+  drain:
+    force: true
+    ignoreDaemonSets: true
+    deleteEmptydirData: true
+    skipWaitForDeleteTimeout: 60
+    timeout: 900s
+  upgrade:
+    image: rancher/k3s-upgrade
+  # renovate: datasource=github-releases depName=k3s-io/k3s
+  version: v1.35.5+k3s1

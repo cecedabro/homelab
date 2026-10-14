@@ -1,0 +1,24 @@
+# MetalLB address pool and L2 announcement (exported from the live cluster, 14 Oct 2026).
+# Every LoadBalancer Service gets an IP from 192.168.50.100-200; pin one with the annotation
+# metallb.io/loadBalancerIPs. Keep this range out of the router's DHCP range.
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.50.100-192.168.50.200
+  autoAssign: true
+  avoidBuggyIPs: false
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool
+

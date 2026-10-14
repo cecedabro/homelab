@@ -1,0 +1,3 @@
+# MetalLB (chart metallb/metallb 0.16.1), managed by Flux (apps/flux/helmreleases.yaml).
+# Installed with chart defaults; the address pool is in address-pool.yaml.
+{}

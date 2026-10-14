@@ -54,3 +54,13 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata: {name: openbao, namespace: flux-system}
 spec: {interval: 12h, url: "https://openbao.github.io/openbao-helm"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: metallb, namespace: flux-system}
+spec: {interval: 12h, url: "https://metallb.github.io/metallb"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: longhorn, namespace: flux-system}
+spec: {interval: 12h, url: "https://charts.longhorn.io"}

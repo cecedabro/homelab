@@ -99,3 +99,13 @@ The Helm releases, their pods and all manifests stay; you're back to `helm upgra
 | Ruilingen app: namespace, PVC, Deployment, ExternalSecret, NetworkPolicy | `apps/ruilingen/`, `apps/network-policies/ruilingen.yaml` | remove from `apps/kustomization.yaml` and delete the namespace (prune is off) |
 | Flux image automation (follows `main-<timestamp>-<sha>` builds) | `apps/flux/image-automation.yaml` | remove it from `apps/kustomization.yaml`; delete the objects |
 | Write deploy key "flux-image-automation (k3s homelab)" on GitHub + Secret `flux-system/homelab-git-write` | GitHub repo settings → Deploy keys; live Secret | delete the deploy key on GitHub and the Secret |
+
+## 14 Oct: off-site backups, secrets, upgrades, Longhorn/MetalLB under Flux
+| Change | Where | Undo |
+|---|---|---|
+| Off-site backup to Backblaze B2 (rclone crypt), nightly 05:00 | `apps/backup-offsite/` | remove from `apps/kustomization.yaml`, delete the CronJob |
+| Alerts BackupJobFailed, OffsiteBackupStale | `apps/prometheus/values.yaml` | remove the two rules |
+| ntfy URLs, dashboard login (ESO now generates a bcrypt htpasswd), k3s backup passphrase moved to OpenBao | `apps/prometheus/externalsecret-ntfy.yaml`, `apps/traefik/externalsecret-basic-auth-*.yaml`, `apps/k3s-backup/externalsecret.yaml` | delete the ExternalSecret with `--cascade=orphan` (the Secret stays) |
+| system-upgrade-controller v0.20.2 + k3s Plans (opt-in per node label) + Renovate k3s manager | `apps/system-upgrade/`, `renovate.json` | remove from `apps/kustomization.yaml`, delete namespace `system-upgrade` |
+| unattended-upgrades on every node (security updates, no auto reboot) | on the nodes | `sudo apt remove unattended-upgrades` |
+| MetalLB and Longhorn adopted as Flux HelmReleases (no restarts), MetalLB pool in git | `apps/flux/helmreleases.yaml`, `apps/metallb/` | see "Removing Flux without losing apps" above |

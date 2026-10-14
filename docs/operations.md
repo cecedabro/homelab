@@ -26,7 +26,7 @@ ruilingen, author `fluxcdbot`), so always `git pull` before you edit. The normal
    A failure shows the reason in the STATUS column.
 
 **Don't** `helm upgrade` an app that Flux manages (see `apps/flux/helmreleases.yaml`); Flux
-would undo it at the next sync. Longhorn, MetalLB and Minecraft are still updated by hand.
+would undo it at the next sync. Only Traefik (k3s) and Minecraft are still updated by hand.
 
 **Emergency: stop Flux from touching things** (e.g. while debugging by hand):
 ```bash
@@ -124,6 +124,39 @@ otherwise the backups can't be opened when the cluster is gone:
 kubectl -n kube-system get secret k3s-backup-passphrase -o jsonpath='{.data.passphrase}' | base64 -d; echo
 ```
 
+## Off-site backups (Backblaze B2)
+Nightly 05:00 `kube-system/offsite-backup` copies `/mnt/media-storage/longhorn-backups` and
+`/mnt/media-storage/k3s-backups` to B2, encrypted with rclone crypt (OpenBao `backup/b2`).
+Alerts: `BackupJobFailed`, `OffsiteBackupStale` (no success for 2 days). Run it now:
+```bash
+kubectl -n kube-system create job --from=cronjob/offsite-backup offsite-backup-manual
+```
+**Restore from B2** (NAS lost): on any machine with rclone, set up the same two remotes from the
+values in Bitwarden (B2 key ID + application key, bucket, crypt password), then
+```bash
+export RCLONE_CONFIG_B2_TYPE=b2 RCLONE_CONFIG_B2_ACCOUNT=<keyID> RCLONE_CONFIG_B2_KEY=<appKey>
+export RCLONE_CONFIG_OFFSITE_TYPE=crypt RCLONE_CONFIG_OFFSITE_REMOTE=b2:<bucket>/homelab
+export RCLONE_CONFIG_OFFSITE_PASSWORD=$(rclone obscure '<crypt password>')
+rclone copy offsite:longhorn-backups ./longhorn-backups    # point Longhorn's backup target here
+rclone copy offsite:k3s-backups ./k3s-backups             # then see "Restore the k3s datastore"
+```
+
+## Upgrading k3s
+Renovate opens a PR when a new k3s patch release exists (minor versions wait for approval on the
+Dependency Dashboard). After merging it, nothing happens until you allow nodes:
+```bash
+kubectl label nodes --all homelab/k3s-upgrade=allowed
+kubectl -n system-upgrade get plans,jobs -w      # server first, then agents one by one (drained)
+kubectl get nodes                                # all on the new version
+kubectl label nodes --all homelab/k3s-upgrade-
+```
+Then unseal OpenBao if its node was drained (alert `OpenBaoSealed`).
+
+## OS updates
+`unattended-upgrades` installs Ubuntu security updates nightly on every node, without rebooting.
+If `/var/run/reboot-required` exists on a node, reboot it when convenient: drain → reboot →
+uncordon (see "Node maintenance").
+
 ## Media stack
 - Movies/series that downloaded but don't show up: Radarr/Sonarr → Activity → Queue. The
   connection "Jellyfin" in Settings → Connect triggers a Jellyfin scan after every import.
@@ -152,6 +185,7 @@ bottom of `apps/minecraft/values.yaml`.
 | OpenBao root token, unseal keys | password manager only |
 | Grafana admin | OpenBao `monitoring/grafana` |
 | Nextcloud admin | OpenBao `nextcloud/nextcloud-admin` |
-| Longhorn/Prometheus/Alertmanager login | `kubectl -n monitoring get secret dashboard-login -o jsonpath='{.data.password}' \| base64 -d` |
-| ntfy topic (alerts) | `kubectl -n monitoring get secret alertmanager-ntfy -o jsonpath='{.data.url}' \| base64 -d` (topic = the part after ntfy.sh/) |
-| k3s backup passphrase | `kube-system/k3s-backup-passphrase` (+ password manager) |
+| Longhorn/Prometheus/Alertmanager login | OpenBao `monitoring/dashboard-login` |
+| ntfy topic (alerts) | OpenBao `monitoring/ntfy` |
+| k3s backup passphrase | OpenBao `kube-system/k3s-backup` (+ password manager) |
+| B2 key + crypt password (off-site) | OpenBao `backup/b2` (+ password manager: needed to restore if the cluster is gone) |

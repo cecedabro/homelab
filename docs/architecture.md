@@ -77,7 +77,7 @@ Freed: .104 (Longhorn) and .113 (Prometheus): only reachable through Traefik + l
 | Storage | What lives there | Protection |
 |---|---|---|
 | **Longhorn** (`longhorn` StorageClass) | app config volumes, databases, OpenBao, Prometheus | 3 replicas across cp-01/worker-01/worker-02/gpu-01; nightly backup to the NAS (7 kept); weekly fstrim |
-| **NAS / NFS** `192.168.50.10:/mnt/media-storage` | media (`movies`, `tv`, `books`, `downloads`), Longhorn backups, k3s datastore backups | single ext4 volume on the drive caddy: **no redundancy and no off-site copy yet** |
+| **NAS / NFS** `192.168.50.10:/mnt/media-storage` | media (`movies`, `tv`, `books`, `downloads`), Longhorn backups, k3s datastore backups | ext4 on an **LVM linear volume over 4× 1 TB** (spanned, no redundancy: one dead drive breaks the filesystem). Backups are copied off-site to B2 every night; media is not |
 | `local-path` | Alertmanager, Portainer (node-bound, on worker-01) | none |
 
 NAS layout:
@@ -112,9 +112,14 @@ Exports (`/etc/exports` on cp-01): the whole share to the LAN and Tailscale, plu
 | `cloudflare/cloudflared-token` | `cloudflare/cloudflared-token` | tunnel connectors |
 | `nextcloud/nextcloud-admin` | `nextcloud/nextcloud-admin` | Nextcloud admin |
 | `cert-manager/cloudflare` | `cert-manager/cloudflare-api-token` | DNS-01 challenges (Zone DNS:Edit only) |
+| `ruilingen/app` | `ruilingen/ruilingen-app` | Ruilingen session secret + planning address |
+| `backup/b2` | `kube-system/offsite-backup-b2` | Backblaze B2 key + rclone crypt password (off-site backups) |
+| `monitoring/ntfy` | `monitoring/alertmanager-ntfy` | Alertmanager → ntfy URLs |
+| `monitoring/dashboard-login` | `dashboard-login` + `dashboard-basic-auth` (monitoring, longhorn-system) | basic auth; ESO generates the bcrypt htpasswd |
+| `kube-system/k3s-backup` | `kube-system/k3s-backup-passphrase` | k3s datastore backup encryption |
 
-Not (yet) in OpenBao: `dashboard-login` / `dashboard-basic-auth` (basic auth),
-`k3s-backup-passphrase` (backup encryption key; also keep it in your password manager).
+Not in OpenBao: Flux's write deploy key (`flux-system/homelab-git-write`), which Flux needs before
+anything else can sync.
 Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 
 ### 5. Apps
@@ -156,6 +161,8 @@ mounts the **same** NFS share at the **same** path and runs as the **same** user
 | daily 02:00 | Longhorn `daily-backup` | backup of all volumes except Prometheus to the NAS |
 | Sunday 03:00 | Longhorn `weekly-trim` | fstrim all volumes (keeps replicas from growing) |
 | daily 04:00 | `kube-system/descheduler` | rebalances pods across worker-01/worker-02 |
+| daily 05:00 | `kube-system/offsite-backup` | rclone sync (encrypted) of the NAS backups to Backblaze B2 |
+| nightly | `unattended-upgrades` (on each node) | Ubuntu security updates; no automatic reboots |
 | Monday 06:00 | `minecraft/minecraft-restart` | weekly restart of the Minecraft servers |
 
 ### 8. Monitoring and alerting
@@ -180,8 +187,11 @@ topic in Secret `monitoring/alertmanager-ntfy`; `critical` alerts arrive as urge
   that used to be installed by hand (no reinstall, no restarts).
 - `prune: false` on the `apps` Kustomization: deleting a file from git does not (yet) delete
   the object. Helm drift detection is off: hand patches on Helm-managed objects survive.
-- **Outside Flux** on purpose: Longhorn and MetalLB (values files incomplete), Traefik (owned
-  by k3s), the two Minecraft releases (hand-patched probes), PV/PVC manifests.
+- **Outside Flux** on purpose: Traefik (owned by k3s), the two Minecraft releases (hand-patched
+  probes), PV/PVC manifests. Longhorn and MetalLB were added on 14 Oct (no restarts).
+- **k3s upgrades**: system-upgrade-controller (`apps/system-upgrade`) with Plans pinned to the
+  cluster's k3s version; Renovate proposes the bump, and the upgrade only runs on nodes you label
+  `homelab/k3s-upgrade=allowed` (see operations.md).
 - **Flux image automation** (`apps/flux/image-automation.yaml`): for apps built in their own repo
   (ruilingen) Flux watches ghcr.io, rewrites the marked image line to the newest `main` build and
   commits that to this repo with a write deploy key (Secret `flux-system/homelab-git-write`).
@@ -193,8 +203,8 @@ topic in Secret `monitoring/alertmanager-ntfy`; `critical` alerts arrive as urge
 1. **k3s-cp-01 is a single point of failure** for the control plane and the datastore. The NAS
    data survives a dead laptop (separate drive caddy), but backups on the NAS don't survive a
    dead NAS. Plan: off-site copy to Backblaze B2, and HA control plane (see below).
-2. **The NAS volume has no redundancy** if the four drives are spanned/striped into one.
-4. **Longhorn, MetalLB and Minecraft are not under Flux yet**, and `prune` is still off.
+2. **The NAS has no redundancy** (LVM linear over 4 drives; data sits mostly on the first one). Backups are off-site in B2; media is not. Converting to RAID 5/10 is a planned project.
+4. **Minecraft is not under Flux**, and `prune` is still off.
 
 ### HA control plane (plan, not done)
 An extra weak node can serve as a control plane, but **2 control planes is worse than 1**:

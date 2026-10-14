@@ -37,14 +37,11 @@ persistence:
     accessMode: ReadWriteOnce
     size: 5Gi
     storageClass: longhorn
+  # The whole NAS is NOT mounted (this would expose downloads, books and the backups).
+  # With media disabled the chart puts an empty dir at /media; volumeMounts below add only the
+  # two library folders inside it.
   media:
-    enabled: true
-    type: pvc
-    accessMode: ReadWriteMany
-    size: 3600Gi
-    storageClass: ""
-    existingClaim: nfs-media
-    mountPath: /media/movies
+    enabled: false
   cache:
     enabled: true
     type: pvc
@@ -52,12 +49,19 @@ persistence:
     size: 10Gi
     storageClass: longhorn
 
-extraVolumes:
-  - name: movies
+# Jellyfin only sees the two library folders of the NAS, read-write (subtitles are saved next to
+# the media, SaveSubtitlesWithMedia). Same paths as before, so the libraries need no rescan.
+# Blast radius if Jellyfin (public via Cloudflare) is ever compromised: movies and tv only, not
+# downloads, the Longhorn/k3s backups or anything else on the NAS.
+volumes:
+  - name: nas
     persistentVolumeClaim:
       claimName: nfs-media
 
-extraVolumeMounts:
-  - name: movies
-    mountPath: /movies
+volumeMounts:
+  - name: nas
+    mountPath: /media/movies
     subPath: movies
+  - name: nas
+    mountPath: /media/tv
+    subPath: tv

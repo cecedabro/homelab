@@ -74,6 +74,10 @@ LoadBalancer IPs still in use (legacy, to be phased out in favour of the names a
 Freed: .104 (Longhorn) and .113 (Prometheus): only reachable through Traefik + login now.
 
 ### 3. Storage
+Who sees what of the NAS: the arr apps and qBittorrent need the whole share (downloads + library on one
+filesystem for hardlinks); Jellyfin only gets `movies` and `tv`, because it is the one app on the
+internet; the backup jobs read `longhorn-backups` and `k3s-backups` on cp-01 directly.
+
 | Storage | What lives there | Protection |
 |---|---|---|
 | **Longhorn** (`longhorn` StorageClass) | app config volumes, databases, OpenBao, Prometheus | 3 replicas across cp-01/worker-01/worker-02/gpu-01; nightly backup to the NAS (7 kept); weekly fstrim |
@@ -125,7 +129,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 ### 5. Apps
 | Namespace | Apps | Notes |
 |---|---|---|
-| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | all mount the NAS at `/media`; arr apps run as UID 1000 like qBittorrent so imports hardlink |
+| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | arr apps + qBittorrent mount the whole NAS at `/media` and run as UID 1000 so imports hardlink. **Jellyfin** (public) only mounts `movies` and `tv` (subPath, read-write), nothing else of the NAS |
 | `monitoring` | Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics | 10 alert rules → ntfy |
 | `nextcloud` | Nextcloud | admin from OpenBao |
 | `homepage` | Homepage dashboard | status dot per app |

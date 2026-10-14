@@ -16,6 +16,10 @@ resources:
   - qbittorrent/externalsecret.yaml
   - ruilingen/externalsecret.yaml
   - backup-offsite/externalsecret.yaml
+  - prometheus/externalsecret-ntfy.yaml
+  - traefik/externalsecret-basic-auth-monitoring.yaml
+  - traefik/externalsecret-basic-auth-longhorn.yaml
+  - k3s-backup/externalsecret.yaml
   # certificates and ingress
   - cert-manager/clusterissuers.yaml
   - traefik/home-certificate.yaml

@@ -151,6 +151,19 @@ serverFiles:
               summary: "OpenBao is sealed or down: unseal it (secrets stop syncing)"
       - name: storage
         rules:
+          - alert: BackupJobFailed
+            # any *backup* Job (k3s datastore, off-site B2, Longhorn recurring) that failed in the last day
+            expr: (kube_job_status_failed{job_name=~".*backup.*"} > 0) and on (namespace, job_name) (time() - kube_job_status_start_time < 86400)
+            labels: {severity: warning}
+            annotations:
+              summary: "Backup job {{ $labels.namespace }}/{{ $labels.job_name }} failed"
+          - alert: OffsiteBackupStale
+            # the B2 copy hasn't succeeded for 2 days (job never ran, or keeps failing)
+            expr: time() - max(kube_cronjob_status_last_successful_time{cronjob="offsite-backup"}) > 172800
+            for: 1h
+            labels: {severity: warning}
+            annotations:
+              summary: "No successful off-site (B2) backup for more than 2 days"
           - alert: PersistentVolumeAlmostFull
             expr: (kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) < 0.10
             for: 15m

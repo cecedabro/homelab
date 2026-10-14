@@ -15,6 +15,7 @@ resources:
   - nextcloud/externalsecret.yaml
   - qbittorrent/externalsecret.yaml
   - ruilingen/externalsecret.yaml
+  - backup-offsite/externalsecret.yaml
   # certificates and ingress
   - cert-manager/clusterissuers.yaml
   - traefik/home-certificate.yaml
@@ -24,6 +25,7 @@ resources:
   - flaresolverr/deployment.yaml
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
+  - backup-offsite/cronjob.yaml
   - minecraft/cronjob-restart.yaml
   - ruilingen/namespace.yaml
   - ruilingen/pvc.yaml

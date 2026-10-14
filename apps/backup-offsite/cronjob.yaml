@@ -1,0 +1,63 @@
+# Nightly off-site copy of the NAS backups to Backblaze B2, encrypted client-side (rclone crypt):
+#   /mnt/media-storage/longhorn-backups  (Longhorn volume backups, 02:00)
+#   /mnt/media-storage/k3s-backups       (encrypted k3s datastore backups, 01:30)
+# -> b2:<bucket>/homelab/<encrypted names>. Backblaze only ever sees ciphertext.
+# Safety: refuses to run against an empty source (dead/unmounted NAS would otherwise "sync away"
+# the off-site copy), caps deletions per run, and B2 keeps deleted/overwritten files as hidden
+# versions (bucket lifecycle decides how long).
+# Restore: see docs/operations.md "Off-site restore".
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: offsite-backup
+  namespace: kube-system
+spec:
+  schedule: "0 5 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 21600
+      template:
+        spec:
+          restartPolicy: Never
+          nodeSelector:
+            kubernetes.io/hostname: k3s-cp-01
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+              effect: NoSchedule
+          containers:
+            - name: rclone
+              image: rclone/rclone:1.68.2
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  export RCLONE_CONFIG_B2_TYPE=b2
+                  export RCLONE_CONFIG_B2_ACCOUNT="$B2_KEY_ID"
+                  export RCLONE_CONFIG_B2_KEY="$B2_APPLICATION_KEY"
+                  export RCLONE_CONFIG_OFFSITE_TYPE=crypt
+                  export RCLONE_CONFIG_OFFSITE_REMOTE="b2:$B2_BUCKET/homelab"
+                  export RCLONE_CONFIG_OFFSITE_PASSWORD="$(rclone obscure "$CRYPT_PASSWORD")"
+                  for d in longhorn-backups k3s-backups; do
+                    n=$(find "/nas/$d" -type f | head -50 | wc -l)
+                    if [ "$n" -lt 2 ]; then echo "REFUSING: /nas/$d looks empty ($n files), NAS unmounted or broken?"; exit 1; fi
+                    echo "== $d"
+                    rclone sync "/nas/$d" "offsite:$d" --fast-list --transfers 4 --checkers 8 \
+                      --max-delete 1000 --stats 60s --stats-one-line -v 2>&1 | grep -vE ' INFO  : .*: (Copied|Deleted)' || true
+                    rclone check "/nas/$d" "offsite:$d" --one-way --size-only -q
+                  done
+                  echo "offsite backup ok: $(date -u +%FT%TZ)"
+              envFrom:
+                - secretRef: {name: offsite-backup-b2}
+              resources:
+                requests: {cpu: 50m, memory: 128Mi}
+                limits: {memory: 512Mi}
+              volumeMounts:
+                - {name: nas, mountPath: /nas, readOnly: true}
+          volumes:
+            - name: nas
+              hostPath: {path: /mnt/media-storage, type: Directory}

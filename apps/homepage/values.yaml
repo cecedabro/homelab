@@ -67,6 +67,12 @@ config:
             description: Shift-swap site for colleagues (public, via Cloudflare)
             icon: mdi-swap-horizontal
             siteMonitor: http://ruilingen.ruilingen.svc.cluster.local/healthz
+    - AI:
+        - Open WebUI:
+            href: http://192.168.50.107
+            description: Chat with the models on the Windows PC (Ollama over Tailscale, PC must be on)
+            icon: open-webui
+            siteMonitor: http://open-webui.open-webui.svc.cluster.local/health
     - Media:
         - Jellyfin:
             href: https://jellyfin.cedricschippers.dev

@@ -64,3 +64,8 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata: {name: longhorn, namespace: flux-system}
 spec: {interval: 12h, url: "https://charts.longhorn.io"}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata: {name: open-webui, namespace: flux-system}
+spec: {interval: 12h, url: "https://helm.openwebui.com/"}

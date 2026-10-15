@@ -1,0 +1,53 @@
+# Open WebUI (chart open-webui/open-webui 17.0.0): chat frontend for the Ollama instance on the
+# Windows PC (reached over Tailscale; the PC is not always on). Managed by Flux
+# (apps/flux/helmreleases.yaml). Manual steps (secret, signup, HTTPS): see README.md.
+
+# Do NOT deploy the bundled Ollama, Pipelines or Redis: one replica, no extra pods.
+ollama:
+  enabled: false
+ollamaUrls:
+  - http://100.93.62.83:11434   # PC over Tailscale; its firewall only allows 100.64.0.0/10
+enableOpenaiApi: false          # no OpenAI key; otherwise the UI keeps trying api.openai.com
+pipelines:
+  enabled: false
+websocket:
+  enabled: true
+  manager: ""                   # built-in in-memory manager (fine for a single replica)
+  redis:
+    enabled: false
+
+# Chat history, users and settings (SQLite + uploads) on Longhorn: covered by the nightly backup.
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: longhorn
+
+# (The chart deploys a StatefulSet with one replica: it always stops the old pod before starting the
+# new one, so the RWO volume needs no Recreate strategy.)
+
+# Only k3s-worker-01 has Tailscale.
+nodeSelector:
+  kubernetes.io/hostname: k3s-worker-01
+
+service:
+  type: LoadBalancer
+  annotations:
+    metallb.io/loadBalancerIPs: "192.168.50.107"   # free address in the pool
+
+extraEnvVars:
+  # Secret created by hand (never in git), see README.md
+  - name: WEBUI_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: open-webui-secret
+        key: WEBUI_SECRET_KEY
+  # Leave "true" until the admin account exists, then set "false" (see README.md)
+  - name: ENABLE_SIGNUP
+    value: "true"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 512Mi
+  limits:
+    memory: 1536Mi

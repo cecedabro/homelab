@@ -33,6 +33,7 @@ resources:
   - backup-offsite/cronjob.yaml
   - minecraft/cronjob-restart.yaml
   - ruilingen/namespace.yaml
+  - open-webui/namespace.yaml
   - ruilingen/pvc.yaml
   - ruilingen/deployment.yaml
   # load balancer IPs
@@ -80,3 +81,4 @@ configMapGenerator:
   - {name: openbao-values, namespace: flux-system, files: [values.yaml=openbao/values.yaml]}
   - {name: metallb-values, namespace: flux-system, files: [values.yaml=metallb/values.yaml]}
   - {name: longhorn-values, namespace: flux-system, files: [values.yaml=longhorn/values.yaml]}
+  - {name: open-webui-values, namespace: flux-system, files: [values.yaml=open-webui/values.yaml]}

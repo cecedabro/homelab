@@ -166,6 +166,9 @@ uncordon (see "Node maintenance").
   connection "Jellyfin" in Settings → Connect triggers a Jellyfin scan after every import.
 - Jellyfin's realtime monitoring doesn't work over NFS; a manual "Scan All Libraries" always helps.
 - Duplicates: check `stat -c %h <file>` (2 = hardlinked, fine; 1 in both places = a copy).
+- Everything under `movies`/`tv` should be owned by 1000:1000 (arr apps, qBittorrent and Jellyfin all run as 1000).
+  If something ends up owned by another user (e.g. files copied in by hand as root), fix it with
+  `kubectl -n media exec deploy/qbittorrent -c qbittorrent -- chown -R 1000:1000 /media/movies /media/tv` (qBittorrent runs as root).
 
 ## Ruilingen (ruilingen.app)
 - **Deploy = release**: in the app repo, `git tag vX.Y.Z && git push origin vX.Y.Z`. CI builds image

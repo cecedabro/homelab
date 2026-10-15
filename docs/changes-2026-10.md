@@ -117,3 +117,10 @@ The Helm releases, their pods and all manifests stay; you're back to `helm upgra
 | Open WebUI (HelmRelease, namespace, PVC 5 Gi, LB 192.168.50.107, Ingress `chat.home.cedricschippers.dev`, NetworkPolicy) | `apps/open-webui/`, `apps/traefik/ingresses.yaml`, `apps/network-policies/open-webui.yaml`, `apps/flux/helmreleases.yaml` | remove from `apps/kustomization.yaml` + the HelmRelease; delete namespace `open-webui` (prune is off) |
 | Secret `open-webui-secret` (random, live only) | namespace `open-webui` | `kubectl -n open-webui delete secret open-webui-secret` |
 | Homepage tile (group AI) | `apps/homepage/values.yaml` | remove the tile |
+
+## 15 Oct: Jellyfin as non-root
+| Change | Where | Undo |
+|---|---|---|
+| Jellyfin runs as UID/GID 1000, capabilities dropped, fsGroup 1000 (was root) | `apps/jellyfin/values.yaml` (`podSecurityContext`, `securityContext`) | remove both blocks |
+| All files/folders under `movies` and `tv` chowned to 1000:1000 (34 entries were `nobody`, 8 root; the arr apps run as 1000 and couldn't modify the `nobody` ones) | on the NAS, one-off | ownership only, nothing to undo |
+Tested: writes in movies/tv/config/cache, NVENC encode and a full 4K HEVC GPU pipeline (decode, scale_cuda, h264_nvenc) as UID 1000.

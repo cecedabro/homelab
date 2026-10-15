@@ -129,7 +129,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 ### 5. Apps
 | Namespace | Apps | Notes |
 |---|---|---|
-| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | arr apps + qBittorrent mount the whole NAS at `/media` and run as UID 1000 so imports hardlink. **Jellyfin** (public) only mounts `movies` and `tv` (subPath, read-write), nothing else of the NAS |
+| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | arr apps + qBittorrent mount the whole NAS at `/media` and run as UID 1000 so imports hardlink. **Jellyfin** (public) runs as UID 1000 (not root) and only mounts `movies` and `tv` (subPath, read-write), nothing else of the NAS |
 | `monitoring` | Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics | 10 alert rules → ntfy |
 | `nextcloud` | Nextcloud | admin from OpenBao |
 | `homepage` | Homepage dashboard | status dot per app |

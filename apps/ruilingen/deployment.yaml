@@ -47,7 +47,7 @@ spec:
             - name: MAIL_BACKEND
               value: smtp
             - name: MAIL_FROM
-              value: Ruilingen <noreply@ruilingen.app>
+              value: Ruilingen.app <noreply@ruilingen.app>
             - name: SMTP_HOST
               value: smtp.resend.com
             - name: SMTP_PORT

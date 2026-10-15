@@ -51,6 +51,7 @@ resources:
   - network-policies/portainer.yaml
   - network-policies/portfolio.yaml
   - network-policies/ruilingen.yaml
+  - network-policies/open-webui.yaml
   - hva/networkpolicy-portfolio-db.yaml
   - openbao/networkpolicy.yaml
   # Flux HelmReleases (+ their chart sources)

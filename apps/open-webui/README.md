@@ -9,8 +9,8 @@ itself runs on the cluster and keeps working (history, settings) when the PC is 
 - Pinned to `k3s-worker-01`, the only node with Tailscale (it carries the traffic to the PC).
 - Bundled Ollama, Pipelines and Redis are switched off. Data (SQLite DB, uploads) is on a 5 Gi
   Longhorn volume, included in the nightly backup.
-- LAN address `http://192.168.50.107` (MetalLB). Plain HTTP: fine for chatting, not enough to
-  install it as an app, see "HTTPS" below.
+- Address: **https://chat.home.cedricschippers.dev** (Traefik + the wildcard certificate, like the
+  other apps; home network or Tailscale subnet route). Direct LAN fallback: `http://192.168.50.107`.
 - The new cluster you are planning does not depend on this: nothing here references it.
 
 ## First-time setup (manual steps)
@@ -26,7 +26,7 @@ The pod waits (`CreateContainerConfigError`) until this exists, then starts by i
 If the cluster is ever rebuilt, just create a new one: the only effect is that everyone is logged out.
 
 ### 2. Admin account
-Open `http://192.168.50.107` and **create your account first**: the first account becomes admin.
+Open `https://chat.home.cedricschippers.dev` and **create your account first**: the first account becomes admin.
 Signup is still open at this point (`ENABLE_SIGNUP: "true"` in `values.yaml`).
 
 ### 3. Close signup (after step 2)
@@ -46,15 +46,15 @@ The second command lists the models. If it times out:
   on the PC from here.
 
 ## HTTPS (needed to install it as an app / PWA)
-Browsers only offer "install" on HTTPS. Two ways, pick one:
+Browsers only offer "install" on HTTPS.
 
-**A. Through Traefik (no node changes, valid certificate)**: add a host to `apps/traefik/ingresses.yaml`,
-e.g. `chat.home.cedricschippers.dev` → service `open-webui` port 80 in namespace `open-webui` (the
-wildcard certificate and DNS record already exist). Works at home and on Tailscale as long as the
-phone/Mac can reach `192.168.50.0/24` over the subnet route.
+**In use: Traefik.** `chat.home.cedricschippers.dev` is an Ingress in `apps/traefik/ingresses.yaml`; the
+wildcard certificate and DNS record already exist. Works at home and on Tailscale as long as the
+phone/Mac can reach `192.168.50.0/24` over the subnet route. Open it and use "Install" / "Add to
+Home Screen".
 
-**B. `tailscale serve` on k3s-worker-01** (works from anywhere on the tailnet, independent of the
-LAN). One-time, by hand, nothing here is automated:
+**Alternative: `tailscale serve` on k3s-worker-01** (works from anywhere on the tailnet, independent
+of the LAN; not configured). One-time, by hand:
 1. Tailscale admin console → DNS → enable **MagicDNS** and **HTTPS Certificates**.
 2. On `k3s-worker-01`, check the syntax of the installed version first: `tailscale serve --help`.
 3. Publish the service (in the background, survives reboots):

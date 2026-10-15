@@ -132,3 +132,15 @@ spec:
   rules:
     - host: nextcloud.home.cedricschippers.dev
       http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: nextcloud, port: {number: 80}}}}]}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: open-webui
+  namespace: open-webui
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: chat.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: open-webui, port: {number: 80}}}}]}

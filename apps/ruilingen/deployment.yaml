@@ -45,13 +45,13 @@ spec:
             # and email login/notifications are hidden. To enable: set "smtp", uncomment the
             # SMTP_* lines and put SMTP_USERNAME/SMTP_PASSWORD in OpenBao.
             - name: MAIL_BACKEND
-              value: none
-              # - name: MAIL_FROM
-              #   value: Ruilingen <noreply@ruilingen.app>
-              # - name: SMTP_HOST
-              #   value: smtp.resend.com
-              # - name: SMTP_PORT
-              #   value: "587"
+              value: smtp
+            - name: MAIL_FROM
+              value: Ruilingen <noreply@ruilingen.app>
+            - name: SMTP_HOST
+              value: smtp.resend.com
+            - name: SMTP_PORT
+              value: "587"
           envFrom:
             - secretRef:
                 name: ruilingen-app

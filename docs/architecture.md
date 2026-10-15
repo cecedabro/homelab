@@ -57,7 +57,7 @@ environment for the UWV DevOps project; nothing schedules there unless it tolera
 
 Internal HTTPS names (all `https://<name>.home.cedricschippers.dev`):
 `home` (Homepage), `jellyfin`, `sonarr`, `radarr`, `prowlarr`, `readarr`, `qbittorrent`,
-`grafana`, `prometheus`*, `alertmanager`*, `longhorn`*, `openbao`, `portainer`, `nextcloud`.
+`grafana`, `prometheus`*, `alertmanager`*, `longhorn`*, `openbao`, `portainer`, `nextcloud`, `chat` (Open WebUI).
 \* behind basic auth (secret `dashboard-login` in `monitoring` / `longhorn-system`).
 
 LoadBalancer IPs still in use (legacy, to be phased out in favour of the names above):
@@ -139,6 +139,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 | `hva`, `portfolio` | portfolio site, web app + Postgres | deployed from the portfolio repo |
 | `minecraft` | 2× Bedrock server | NetherNet migration pending (see apps/minecraft) |
 | `portainer` | Portainer | cluster-admin: guard its password |
+| `open-webui` | Open WebUI (chat UI for Ollama on the Windows PC over Tailscale) | StatefulSet pinned to k3s-worker-01 (only node with Tailscale), 5 Gi Longhorn; works only while the PC is on; https://chat.home.cedricschippers.dev |
 | `ruilingen` | Ruilingen (shift-swap site, own repo `cecedabro/ruilingen-portaal`) | 1 replica (SQLite on RWO); public at ruilingen.app via the tunnel; image bumped by Flux image automation |
 
 ### 6. How the media stack clicks together

@@ -178,6 +178,15 @@ uncordon (see "Node maintenance").
 - Admin login link: `kubectl -n ruilingen exec deploy/ruilingen -- python -m app.cli admin-link "Name"`.
 - Secrets: OpenBao `ruilingen/app` (`SESSION_SECRET`: don't rotate casually, it logs everyone out).
 
+## Open WebUI (chat.home.cedricschippers.dev)
+- Chat UI for the Ollama instance on the Windows PC (`http://100.93.62.83:11434` over Tailscale).
+  The UI keeps working with the PC off; it just can't answer. Details + first-time steps: `apps/open-webui/README.md`.
+- First start takes ~1-2 minutes (downloads a small embedding model); the chart has no readiness
+  probe, so Traefik answers 502 until the app listens.
+- It is a StatefulSet: restart with `kubectl -n open-webui delete pod open-webui-0`.
+- Signup is open until the admin account exists, then flip `ENABLE_SIGNUP` to `"false"` in
+  `apps/open-webui/values.yaml`. `WEBUI_SECRET_KEY` lives in the hand-made Secret `open-webui-secret`.
+
 ## Minecraft
 The Bedrock chart's probes are patched by hand (NetherNet transport). **Don't** run
 `helm upgrade` on the minecraft releases without re-applying the patch, see the note at the

@@ -110,3 +110,10 @@ The Helm releases, their pods and all manifests stay; you're back to `helm upgra
 | unattended-upgrades on every node (security updates, no auto reboot) | on the nodes | `sudo apt remove unattended-upgrades` |
 | MetalLB and Longhorn adopted as Flux HelmReleases (no restarts), MetalLB pool in git | `apps/flux/helmreleases.yaml`, `apps/metallb/` | see "Removing Flux without losing apps" above |
 | Jellyfin only mounts the NAS folders `movies` and `tv` (was: the whole NAS, incl. downloads and backups) | `apps/jellyfin/values.yaml` (`persistence.media.enabled: false` + `volumes`/`volumeMounts`) | restore `persistence.media` with `existingClaim: nfs-media`. Note: changing the type of the `media` volume needs the Deployment deleted once (`kubectl -n media delete deploy jellyfin`), Flux recreates it; a server-side merge can't change a volume's type |
+
+## 15 Oct: Open WebUI
+| Change | Where | Undo |
+|---|---|---|
+| Open WebUI (HelmRelease, namespace, PVC 5 Gi, LB 192.168.50.107, Ingress `chat.home.cedricschippers.dev`, NetworkPolicy) | `apps/open-webui/`, `apps/traefik/ingresses.yaml`, `apps/network-policies/open-webui.yaml`, `apps/flux/helmreleases.yaml` | remove from `apps/kustomization.yaml` + the HelmRelease; delete namespace `open-webui` (prune is off) |
+| Secret `open-webui-secret` (random, live only) | namespace `open-webui` | `kubectl -n open-webui delete secret open-webui-secret` |
+| Homepage tile (group AI) | `apps/homepage/values.yaml` | remove the tile |

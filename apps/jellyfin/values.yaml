@@ -22,6 +22,20 @@ tolerations:
     value: gpu
     effect: NoSchedule
 
+# Runs as UID/GID 1000 (not root): the same user as the arr apps, so everything it writes
+# (subtitles next to media) is owned by the same user. fsGroup makes the Longhorn config/cache
+# volumes writable; the GPU devices are world-accessible so NVENC/NVDEC still work.
+# Rollback if transcoding ever breaks: remove these two blocks (it then runs as root again).
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
 # Requests/limits from 7-day Prometheus peaks (2026-10-13); no CPU limit (transcoding bursts)
 resources:
   requests:

@@ -32,6 +32,7 @@ resources:
   - system-upgrade
   - backup-offsite/cronjob.yaml
   - minecraft/cronjob-restart.yaml
+  - minecraft/service-nethernet.yaml
   - ruilingen/namespace.yaml
   - open-webui/namespace.yaml
   - ruilingen/pvc.yaml

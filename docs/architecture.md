@@ -57,7 +57,7 @@ environment for the UWV DevOps project; nothing schedules there unless it tolera
 
 Internal HTTPS names (all `https://<name>.home.cedricschippers.dev`):
 `home` (Homepage), `jellyfin`, `sonarr`, `radarr`, `prowlarr`, `readarr`, `qbittorrent`,
-`grafana`, `prometheus`*, `alertmanager`*, `longhorn`*, `openbao`, `portainer`, `nextcloud`, `chat` (Open WebUI).
+`grafana`, `prometheus`*, `alertmanager`*, `longhorn`*, `openbao`, `portainer`, `nextcloud`, `chat` (Open WebUI), `seerr`.
 \* behind basic auth (secret `dashboard-login` in `monitoring` / `longhorn-system`).
 
 LoadBalancer IPs still in use (legacy, to be phased out in favour of the names above):
@@ -129,7 +129,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 ### 5. Apps
 | Namespace | Apps | Notes |
 |---|---|---|
-| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr | arr apps + qBittorrent mount the whole NAS at `/media` and run as UID 1000 so imports hardlink. **Jellyfin** (public) runs as UID 1000 (not root) and only mounts `movies` and `tv` (subPath, read-write), nothing else of the NAS |
+| `media` | Jellyfin, Sonarr, Radarr, Prowlarr, Readarr, qBittorrent (+gluetun VPN), FlareSolverr, **Seerr** (request UI: users ask for a movie/series, it goes to Radarr/Sonarr) | arr apps + qBittorrent mount the whole NAS at `/media` and run as UID 1000 so imports hardlink. **Jellyfin** (public) runs as UID 1000 (not root) and only mounts `movies` and `tv` (subPath, read-write), nothing else of the NAS |
 | `monitoring` | Prometheus, Alertmanager, Grafana, node-exporter, kube-state-metrics | 10 alert rules → ntfy |
 | `nextcloud` | Nextcloud | admin from OpenBao |
 | `homepage` | Homepage dashboard | status dot per app |
@@ -147,7 +147,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
  Prowlarr (indexers, FlareSolverr for Cloudflare-protected ones)
      │ syncs indexers to
      ▼
- Sonarr (TV) / Radarr (movies) ──grab──► qBittorrent (through gluetun → Mullvad VPN)
+ Seerr (requests) ──► Sonarr (TV) / Radarr (movies) ──grab──► qBittorrent (through gluetun → Mullvad VPN)
      ▲                                        │ downloads to /media/downloads
      │ import (hardlink, same filesystem)     │
      └────────────────────────────────────────┘

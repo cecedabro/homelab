@@ -124,3 +124,9 @@ The Helm releases, their pods and all manifests stay; you're back to `helm upgra
 | Jellyfin runs as UID/GID 1000, capabilities dropped, fsGroup 1000 (was root) | `apps/jellyfin/values.yaml` (`podSecurityContext`, `securityContext`) | remove both blocks |
 | All files/folders under `movies` and `tv` chowned to 1000:1000 (34 entries were `nobody`, 8 root; the arr apps run as 1000 and couldn't modify the `nobody` ones) | on the NAS, one-off | ownership only, nothing to undo |
 Tested: writes in movies/tv/config/cache, NVENC encode and a full 4K HEVC GPU pipeline (decode, scale_cuda, h264_nvenc) as UID 1000.
+
+## 19 Oct: Seerr
+| Change | Where | Undo |
+|---|---|---|
+| Seerr (official OCI chart 3.10.0, app v3.5.0) in `media`, 1 Gi Longhorn volume, ingress `seerr.home.cedricschippers.dev`, Homepage tile | `apps/seerr/`, `apps/flux/*`, `apps/traefik/ingresses.yaml`, `apps/homepage/values.yaml` | remove the HelmRelease + values ConfigMap + ingress host + tile; `kubectl -n media delete pvc seerr-config` if the data should go too |
+| Wizard in the browser (Jellyfin login, Radarr/Sonarr connections with their API keys) | live, stored in Seerr's own volume | re-run via Settings |

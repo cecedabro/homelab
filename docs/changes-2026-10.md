@@ -130,3 +130,10 @@ Tested: writes in movies/tv/config/cache, NVENC encode and a full 4K HEVC GPU pi
 |---|---|---|
 | Seerr (official OCI chart 3.10.0, app v3.5.0) in `media`, 1 Gi Longhorn volume, ingress `seerr.home.cedricschippers.dev`, Homepage tile | `apps/seerr/`, `apps/flux/*`, `apps/traefik/ingresses.yaml`, `apps/homepage/values.yaml` | remove the HelmRelease + values ConfigMap + ingress host + tile; `kubectl -n media delete pvc seerr-config` if the data should go too |
 | Wizard in the browser (Jellyfin login, Radarr/Sonarr connections with their API keys) | live, stored in Seerr's own volume | re-run via Settings |
+
+## 19 Oct: Minecraft NetherNet on the LAN (step A)
+| Change | Where | Undo |
+|---|---|---|
+| Per-server MetalLB IPs (survival 192.168.50.104, creative .113) with TCP 19132 + UDP 32000-32019, externalTrafficPolicy Local | `apps/minecraft/service-nethernet.yaml` | remove from `apps/kustomization.yaml`, delete the two Services |
+| `server-udp-ports=<LAN ip>:32000-32019:32000-32019` in each server's `/data/server.properties` (live, on the volume) | live only | delete the line and restart the server |
+Verified: a real client connected and spawned on the survival server over the LAN (TCP handshake, then UDP port 32000). Internet access (Pi relay + Fritz!Box) is still the old RakNet path and does not work.

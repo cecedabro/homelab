@@ -137,7 +137,7 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 | `cert-manager` | certificates | |
 | `cloudflare` | cloudflared | plain Deployment, pinned version |
 | `hva`, `portfolio` | portfolio site, web app + Postgres | deployed from the portfolio repo |
-| `minecraft` | 2× Bedrock server | NetherNet migration pending (see apps/minecraft) |
+| `minecraft` | 2× Bedrock server (survival .104, creative .113) | NetherNet: works on the LAN (TCP 19132 + UDP 32000-32019 per server, `apps/minecraft/service-nethernet.yaml`); internet access via the Pi relay + Fritz!Box still to be rebuilt (step B) |
 | `portainer` | Portainer | cluster-admin: guard its password |
 | `open-webui` | Open WebUI (chat UI for Ollama on the Windows PC over Tailscale) | StatefulSet pinned to k3s-worker-01 (only node with Tailscale), 5 Gi Longhorn; works only while the PC is on; https://chat.home.cedricschippers.dev |
 | `ruilingen` | Ruilingen (shift-swap site, own repo `cecedabro/ruilingen-portaal`) | 1 replica (SQLite on RWO); public at ruilingen.app via the tunnel; image bumped by Flux image automation |

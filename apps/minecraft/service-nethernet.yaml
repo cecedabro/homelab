@@ -6,7 +6,8 @@
 # so every address listed there must be reachable for TCP 19132 AND UDP 32000-32019.
 #   LAN (this file):   bedrock 192.168.50.104, creative 192.168.50.113 (MetalLB), same ports on both IPs
 #   Internet (later):  add a second entry with the public address, e.g. `,<public ip>:EXT-EXT:32000-32019`
-# externalTrafficPolicy Local keeps the client's real source address (ICE/UDP needs it).
+# externalTrafficPolicy Cluster: with Local, kube-proxy on cp-01 (the Tailscale subnet router) drops packets that
+# the Pi forwards to these LB IPs, because cp-01 has no local endpoint. Cluster costs the real client source address.
 # The chart's own NodePort services (UDP 30000/30001, RakNet era) are still there for the old relay.
 ---
 apiVersion: v1
@@ -18,7 +19,7 @@ metadata:
     metallb.io/loadBalancerIPs: "192.168.50.104"
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   selector:
     app: minecraft-bedrock-minecraft-bedrock
   ports:
@@ -53,7 +54,7 @@ metadata:
     metallb.io/loadBalancerIPs: "192.168.50.113"
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Local
+  externalTrafficPolicy: Cluster
   selector:
     app: minecraft-creative-minecraft-bedrock
   ports:

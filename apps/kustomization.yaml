@@ -83,3 +83,4 @@ configMapGenerator:
   - {name: metallb-values, namespace: flux-system, files: [values.yaml=metallb/values.yaml]}
   - {name: longhorn-values, namespace: flux-system, files: [values.yaml=longhorn/values.yaml]}
   - {name: open-webui-values, namespace: flux-system, files: [values.yaml=open-webui/values.yaml]}
+  - {name: seerr-values, namespace: flux-system, files: [values.yaml=seerr/values.yaml]}

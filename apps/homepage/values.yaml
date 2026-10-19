@@ -83,6 +83,11 @@ config:
             href: https://jellyfin.home.cedricschippers.dev
             description: Direct on the home network (HTTPS), no Cloudflare hop
             icon: jellyfin
+        - Seerr:
+            href: https://seerr.home.cedricschippers.dev
+            description: Request movies and series (goes to Radarr/Sonarr, shows up in Jellyfin)
+            icon: seerr
+            siteMonitor: http://seerr.media.svc.cluster.local/api/v1/status
         - qBittorrent:
             href: https://qbittorrent.home.cedricschippers.dev
             description: Download client

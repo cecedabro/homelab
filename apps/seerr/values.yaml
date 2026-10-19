@@ -1,0 +1,22 @@
+# Seerr (request manager for Jellyfin + Sonarr + Radarr), official chart seerr-team/seerr-chart,
+# managed by Flux (apps/flux/helmreleases.yaml, chart source = OCI HelmRepository "seerr").
+# Runs in the media namespace so it reaches jellyfin/radarr/sonarr by their service names.
+# Setup wizard steps (no secrets in git): see README.md.
+fullnameOverride: seerr
+
+# Settings DB + users (SQLite) on Longhorn: covered by the nightly backup (default group).
+config:
+  persistence:
+    size: 1Gi
+    storageClass: longhorn
+
+extraEnv:
+  - name: TZ
+    value: Europe/Amsterdam
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 256Mi
+  limits:
+    memory: 768Mi

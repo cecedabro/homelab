@@ -46,10 +46,12 @@ spec:
                     n=$(find "/nas/$d" -type f | head -50 | wc -l)
                     if [ "$n" -lt 2 ]; then echo "REFUSING: /nas/$d looks empty ($n files), NAS unmounted or broken?"; exit 1; fi
                     echo "== $d"
+                    # --max-delete is a safety net against a wiped source. Longhorn's 7-day retention prunes whole
+                    # backups of 2 MiB blocks (a 4 GiB day = ~2000 files), so 1000 failed the job on 2026-10-21.
                     # no pipes here: rclone's exit code must fail the job (an earlier "| grep || true"
                     # hid a storage-cap error). NOTICE level keeps the log short; errors still show.
                     rclone sync "/nas/$d" "offsite:$d" --fast-list --transfers 4 --checkers 8 \
-                      --max-delete 1000 --log-level NOTICE --stats 5m --stats-one-line --stats-log-level NOTICE
+                      --max-delete 10000 --log-level NOTICE --stats 5m --stats-one-line --stats-log-level NOTICE
                     rclone check "/nas/$d" "offsite:$d" --one-way --size-only --log-level ERROR
                   done
                   echo "offsite backup ok: $(date -u +%FT%TZ)"

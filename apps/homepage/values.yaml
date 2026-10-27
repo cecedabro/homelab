@@ -88,6 +88,11 @@ config:
             description: Request movies and series (goes to Radarr/Sonarr, shows up in Jellyfin)
             icon: seerr
             siteMonitor: http://seerr.media.svc.cluster.local/api/v1/status
+        - Bazarr:
+            href: https://bazarr.home.cedricschippers.dev
+            description: Subtitles (English) for Radarr and Sonarr
+            icon: bazarr
+            siteMonitor: http://bazarr.media.svc.cluster.local:6767
         - qBittorrent:
             href: https://qbittorrent.home.cedricschippers.dev
             description: Download client

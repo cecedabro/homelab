@@ -137,3 +137,18 @@ Tested: writes in movies/tv/config/cache, NVENC encode and a full 4K HEVC GPU pi
 | Per-server MetalLB IPs (survival 192.168.50.104, creative .113) with TCP 19132 + UDP 32000-32019, externalTrafficPolicy Local | `apps/minecraft/service-nethernet.yaml` | remove from `apps/kustomization.yaml`, delete the two Services |
 | `server-udp-ports=<LAN ip>:32000-32019:32000-32019` in each server's `/data/server.properties` (live, on the volume) | live only | delete the line and restart the server |
 Verified: a real client connected and spawned on the survival server over the LAN (TCP handshake, then UDP port 32000). Internet access (Pi relay + Fritz!Box) is still the old RakNet path and does not work.
+
+## 19-26 Oct: Minecraft over the internet (step B), backup limit
+| Change | Where | Undo |
+|---|---|---|
+| NetherNet Services use `externalTrafficPolicy: Cluster` (with Local, kube-proxy on cp-01, the Tailscale subnet router, dropped packets the Pi forwarded to the LB IPs) | `apps/minecraft/service-nethernet.yaml` | set back to Local (breaks the Pi path) |
+| Pi relay forwards the public ports over Tailscale: survival TCP 19132 + UDP 32000-32019 -> .104; creative TCP 19133 -> .113:19132 and UDP 32100-32119 -> .113:32000-32019 (iptables chains MC-PRE/MC-POST on the Pi) | `apps/minecraft/pi-forward.sh` (run by hand on the Pi) | `sudo iptables -t nat -F MC-PRE; sudo iptables -t nat -F MC-POST` |
+| Fritz!Box port forwards to the Pi: TCP 19132, 19133; UDP 32000-32019, 32100-32119 | router UI | delete the four rules |
+| Public address added as a second entry in `server-udp-ports` (live only, never in git) | each server's `/data/server.properties` | remove the entry, restart |
+| Off-site backup `rclone --max-delete` 1000 -> 10000 (Longhorn's 7-day retention prunes ~2000 block files in one go; the first rotation failed the job on 21 Oct) | `apps/backup-offsite/cronjob.yaml` | set back to 1000 |
+
+## 27 Oct: Bazarr (subtitles)
+| Change | Where | Undo |
+|---|---|---|
+| Bazarr 1.6.2 in `media` (Deployment, 1 Gi Longhorn volume `bazarr-config`, ClusterIP), ingress `bazarr.home.cedricschippers.dev`, Homepage tile | `apps/bazarr/`, `apps/kustomization.yaml`, `apps/traefik/ingresses.yaml`, `apps/homepage/values.yaml` | see `apps/bazarr/README.md` |
+| Setup in the browser: login, English language profile, OpenSubtitles account, Sonarr/Radarr connections | live, in Bazarr's volume | re-run via Settings |

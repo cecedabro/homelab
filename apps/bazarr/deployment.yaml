@@ -1,0 +1,83 @@
+# Bazarr: downloads subtitles (English) for everything Sonarr/Radarr manage and writes them next to the
+# video files. No Helm chart exists for it in the repos we use, so plain manifests (like qBittorrent).
+# Runs as UID 1000 like the arr apps, so it can write .srt files into /media/movies and /media/tv.
+# Reachable at https://bazarr.home.cedricschippers.dev (ingress in apps/traefik/ingresses.yaml), no LB IP.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bazarr-config
+  namespace: media
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate   # RWO Longhorn volume: the old pod must release it first
+  selector:
+    matchLabels:
+      app: bazarr
+  template:
+    metadata:
+      labels:
+        app: bazarr
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      containers:
+        - name: bazarr
+          image: ghcr.io/home-operations/bazarr:1.6.2@sha256:b8434a7339ebd9c2bfe4464c28db79944e0f52f47da85345fc7e0563c19f83ac  # pinned 2026-10-27
+          env:
+            - name: TZ
+              value: Europe/Amsterdam
+          ports:
+            - containerPort: 6767
+              name: http
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 20m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /media
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bazarr-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: nfs-media
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  type: ClusterIP
+  selector:
+    app: bazarr
+  ports:
+    - name: http
+      port: 6767
+      targetPort: http

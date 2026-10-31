@@ -157,4 +157,4 @@ Verified: a real client connected and spawned on the survival server over the LA
 | Change | Where | Undo |
 |---|---|---|
 | Namespaces `ai-agent` (restricted) and `ai-waker` (privileged), devbox StatefulSet (replicas 0 until image + secrets exist; 30 Gi Longhorn, excluded from the nightly backup), NetworkPolicy, waker Deployment (replicas 0 until the PC's MAC is in OpenBao), ExternalSecrets from `secret/ai-agent/*` | `apps/ai-agent/`, `apps/kustomization.yaml` | see `apps/ai-agent/README.md` |
-| New private repo github.com/cecedabro/local-ai-agent (PC scripts, devbox image, harness); its own `k8s/` folder moved here (OpenBao instead of SOPS, ntfy.sh instead of in-cluster ntfy, waker binds to the node's LAN IP) | GitHub | archive/delete the repo |
+| New repo github.com/cecedabro/local-ai-agent (public since 31 Oct; the GHCR image package is still private until switched by hand) (PC scripts, devbox image, harness); its own `k8s/` folder moved here (OpenBao instead of SOPS, ntfy.sh instead of in-cluster ntfy, waker binds to the node's LAN IP) | GitHub | archive/delete the repo |

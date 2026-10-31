@@ -3,7 +3,7 @@
 The model runs on the Windows PC (WSL2 + llama.cpp, served as alias `coder`). The agent runs here, in
 an always-on **devbox** pod, wakes the PC with Wake-on-LAN when there is work, and lets it sleep
 again afterwards. PC scripts, the devbox image and the loop harness live in
-**github.com/cecedabro/local-ai-agent** (private); this folder is only what runs on the cluster.
+**github.com/cecedabro/local-ai-agent** (public); this folder is only what runs on the cluster.
 
 | Object | What |
 |---|---|
@@ -20,9 +20,10 @@ cannot reach other services in the cluster or on the LAN.
 
 ## Setup (your steps)
 
-1. **Make the image pullable.** The repo is private, so its image package is private too. On GitHub:
-   your profile → Packages → `local-ai-agent-devbox` → Package settings → Change visibility →
-   **Public** (it only contains public tools, no secrets). Until then the pod shows `ImagePullBackOff`.
+1. **Make the image pullable.** The repo is public, but GitHub keeps the image package private (its
+   visibility is separate and has no API). On GitHub: your profile → Packages → `local-ai-agent-devbox`
+   → Package settings → Change visibility → **Public** (only public tools, no secrets). Until then the
+   pod shows `ImagePullBackOff`.
 2. **Tailscale** (admin console): add the tag to the ACL `tagOwners` (`"tag:devbox": ["autogroup:admin"]`),
    then Settings → Keys → generate an auth key: *not* reusable, tags `tag:devbox`. Allow your own
    devices SSH to it (ACL `ssh` rule: src your user, dst `tag:devbox`, users `agent`).

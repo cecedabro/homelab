@@ -37,9 +37,9 @@ cannot reach other services in the cluster or on the LAN.
    Then: `kubectl -n ai-agent annotate externalsecret devbox force-sync=$(date +%s) --overwrite`
    (same for `-n ai-waker externalsecret waker`). Then set `replicas: 1` in `devbox.yaml` (it is 0
    so a missing image or secret doesn't page you) and commit; Flux starts it.
-4. **The PC on the LAN** (after Phase 1 of `pc/README.md` in local-ai-agent): give the PC a fixed
-   address in the router, then in `devbox.yaml` fill `PC_HOST`, `PC_SSH_USER`, `LLAMA_BASE_URL`, and
-   uncomment the PC rule in the NetworkPolicy with that IP. Commit; Flux applies it.
+4. **The PC on the LAN:** reserve **192.168.50.17** for the PC in the router (MAC `30-9C-23-6A-7E-39`).
+   `devbox.yaml` already uses it (`PC_HOST`, `LLAMA_BASE_URL`, NetworkPolicy). The PC runs Windows 10,
+   so WSL is behind NAT and `ai-power.ps1` forwards 8080/2222 from the PC's LAN address into WSL.
 5. **Waker:** set `replicas: 1` in `waker.yaml` once `ai-agent/waker` is in OpenBao (and Wake-on-LAN
    is set up on the PC, `pc/README.md` Phase 2).
 6. **PC key:** the devbox generates its own SSH key on first start. Get the public half with

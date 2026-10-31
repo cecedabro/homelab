@@ -158,3 +158,14 @@ Verified: a real client connected and spawned on the survival server over the LA
 |---|---|---|
 | Namespaces `ai-agent` (restricted) and `ai-waker` (privileged), devbox StatefulSet (replicas 0 until image + secrets exist; 30 Gi Longhorn, excluded from the nightly backup), NetworkPolicy, waker Deployment (replicas 0 until the PC's MAC is in OpenBao), ExternalSecrets from `secret/ai-agent/*` | `apps/ai-agent/`, `apps/kustomization.yaml` | see `apps/ai-agent/README.md` |
 | New repo github.com/cecedabro/local-ai-agent (public since 31 Oct; the GHCR image package is still private until switched by hand) (PC scripts, devbox image, harness); its own `k8s/` folder moved here (OpenBao instead of SOPS, ntfy.sh instead of in-cluster ntfy, waker binds to the node's LAN IP) | GitHub | archive/delete the repo |
+| Devbox points at the PC: `PC_HOST` 192.168.50.17, `PC_SSH_USER` cedric, `LLAMA_BASE_URL` http://192.168.50.17:8080/v1; NetworkPolicy allows 192.168.50.17 on 8080/2222 (router DHCP reservation for the PC still to do) | `apps/ai-agent/devbox.yaml` | empty the three values, remove the egress rule |
+
+## 31 Oct: AI PC set up (remotely, over SSH from the Mac)
+| Change | Where | Undo |
+|---|---|---|
+| OpenSSH server on Windows, key-only (`~/.ssh/pc-desktop` on the Mac), firewall Tailscale-only (100.64.0.0/10), PowerShell as shell | PC | `Stop-Service sshd; Set-Service sshd -StartupType Disabled`, or delete the key from `C:\ProgramData\ssh\administrators_authorized_keys` |
+| Ollama uninstalled, models (7.5 GB) and `OLLAMA_HOST` removed. Open WebUI's Ollama URL (100.93.62.83:11434) is now dead | PC | `winget install Ollama.Ollama` |
+| WSL Ubuntu moved to `F:\WSL\Ubuntu` (NVMe), `.wslconfig` 26 GB RAM / 8 GB swap, NAT; hostname `ai-pc` | PC | `wsl --manage Ubuntu --move <dir>`; `.wslconfig` |
+| NVIDIA driver 560.94 -> 621.01 (display driver only, via pnputil) | PC | Device Manager -> roll back driver |
+| CUDA 13.3 toolkit, llama.cpp v0.8.0 (sm_86), Qwen3.6-35B-A3B UD-Q4_K_XL, `llama-server` systemd unit (alias `coder`, API key in `/etc/llama/api-key`, N_CPU_MOE 26: ~36 tok/s), sshd on 2222 (no keys yet) | WSL | `systemctl disable --now llama-server ssh` |
+| Boot task `ai-power` (S4U, elevated): keeps WSL up, portproxy 8080/2222 -> WSL; firewall rule `ai-wsl-in` (LAN only); hibernate off, sleep after 20 min; NIC wake on pattern off (magic packet only) | PC | `Unregister-ScheduledTask ai-power; netsh interface portproxy reset; Remove-NetFirewallRule -Name ai-wsl-in` |

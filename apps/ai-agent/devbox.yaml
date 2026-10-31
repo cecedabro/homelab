@@ -40,9 +40,9 @@ metadata:
   name: devbox-config
   namespace: ai-agent
 data:
-  PC_HOST: ""                                   # PC LAN IP, once known (also in the NetworkPolicy below)
-  PC_SSH_USER: ""                               # WSL user on the PC
-  LLAMA_BASE_URL: ""                            # http://<PC LAN IP>:8080/v1
+  PC_HOST: 192.168.50.17                        # PC LAN IP (DHCP reservation; also in the NetworkPolicy below)
+  PC_SSH_USER: cedric                           # WSL user on the PC
+  LLAMA_BASE_URL: http://192.168.50.17:8080/v1  # Windows portproxy -> llama-server in WSL
   WAKER_URL: http://192.168.50.11:9009          # waker.yaml: hostNetwork on k3s-worker-01
   NTFY_URL: https://ntfy.sh
   GIT_AUTHOR_NAME: local-agent
@@ -127,8 +127,7 @@ spec:
           requests: {storage: 30Gi}
 ---
 # Default deny, then: DNS, the public internet on web + Tailscale ports (private ranges excluded),
-# the waker on k3s-worker-01. Nothing inbound: Tailscale connects outbound.
-# The PC rule is added once its LAN IP is known (README.md, step 4).
+# the waker on k3s-worker-01, the PC. Nothing inbound: Tailscale connects outbound.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -158,8 +157,8 @@ spec:
         - ipBlock: {cidr: 192.168.50.11/32}   # waker (hostNetwork on k3s-worker-01)
       ports:
         - {protocol: TCP, port: 9009}
-    # - to:
-    #     - ipBlock: {cidr: <PC LAN IP>/32}   # llama-server + WSL sshd
-    #   ports:
-    #     - {protocol: TCP, port: 8080}
-    #     - {protocol: TCP, port: 2222}
+    - to:
+        - ipBlock: {cidr: 192.168.50.17/32}   # the PC: llama-server + WSL sshd
+      ports:
+        - {protocol: TCP, port: 8080}
+        - {protocol: TCP, port: 2222}

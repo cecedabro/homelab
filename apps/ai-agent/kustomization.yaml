@@ -1,0 +1,13 @@
+# Local AI coding agent, cluster side. PC scripts, devbox image and harness:
+# github.com/cecedabro/local-ai-agent. See README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - devbox.yaml
+  - waker.yaml
+generatorOptions:
+  disableNameSuffixHash: true   # waker.py changes need: kubectl -n ai-waker rollout restart deploy/waker
+configMapGenerator:
+  - name: waker-app
+    namespace: ai-waker
+    files: [waker.py]

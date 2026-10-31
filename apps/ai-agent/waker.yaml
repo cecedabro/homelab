@@ -1,0 +1,80 @@
+# Wake-on-LAN relay for the PC (local AI agent, see README.md). hostNetwork, so it has its own
+# namespace with Pod Security "privileged"; ai-agent itself stays "restricted".
+# hostNetwork pods are not covered by NetworkPolicy, so /wake is protected by WAKER_TOKEN and the
+# server only listens on the node's LAN IP (192.168.50.11:9009), not on Tailscale.
+# replicas: 0 until PC_MAC and WAKER_TOKEN are in OpenBao (secret ai-agent/waker); then set 1.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-waker
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: waker
+  namespace: ai-waker
+spec:
+  refreshInterval: 1h
+  secretStoreRef: {kind: ClusterSecretStore, name: openbao}
+  target: {name: waker, creationPolicy: Owner}
+  data:
+    - secretKey: PC_MAC
+      remoteRef: {key: ai-agent/waker, property: PC_MAC}
+    - secretKey: WAKER_TOKEN
+      remoteRef: {key: ai-agent/waker, property: WAKER_TOKEN}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waker
+  namespace: ai-waker
+  labels: {app: waker}
+spec:
+  replicas: 0
+  strategy: {type: Recreate}   # binds a host port: never two at once
+  selector:
+    matchLabels: {app: waker}
+  template:
+    metadata:
+      labels: {app: waker}
+    spec:
+      hostNetwork: true          # pod networks don't carry LAN broadcasts
+      dnsPolicy: ClusterFirstWithHostNet
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      nodeSelector:
+        kubernetes.io/hostname: k3s-worker-01   # wired, LAN 192.168.50.11 on eno1; the devbox egress policy points here
+      containers:
+        - name: waker
+          image: python:3.13-alpine@sha256:7984cf56ceaddebe4fefeb75d64000b9f45d8b77b11a09b24524da6cdc3af0c8  # pinned 2026-10-31
+          command: ["python", "-u", "/app/waker.py"]
+          env:
+            - {name: PORT, value: "9009"}
+            - {name: BROADCAST, value: "192.168.50.255"}
+            - name: BIND
+              valueFrom: {fieldRef: {fieldPath: status.hostIP}}
+            - name: PC_MAC
+              valueFrom: {secretKeyRef: {name: waker, key: PC_MAC}}
+            - name: WAKER_TOKEN
+              valueFrom: {secretKeyRef: {name: waker, key: WAKER_TOKEN}}
+          ports:
+            - {name: http, containerPort: 9009}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 9009}
+          resources:
+            requests: {cpu: 5m, memory: 16Mi}
+            limits: {memory: 64Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: app, mountPath: /app, readOnly: true}
+      volumes:
+        - name: app
+          configMap: {name: waker-app}

@@ -137,9 +137,10 @@ Rule of thumb: **values live in OpenBao, the repo only says where they go.**
 | `cert-manager` | certificates | |
 | `cloudflare` | cloudflared | plain Deployment, pinned version |
 | `hva`, `portfolio` | portfolio site, web app + Postgres | deployed from the portfolio repo |
-| `minecraft` | 2× Bedrock server (survival .104, creative .113) | NetherNet: works on the LAN (TCP 19132 + UDP 32000-32019 per server, `apps/minecraft/service-nethernet.yaml`); internet access via the Pi relay + Fritz!Box still to be rebuilt (step B) |
+| `minecraft` | 2× Bedrock server (survival .104, creative .113) | NetherNet (TCP 19132 + UDP 32000-32019 per server, `apps/minecraft/service-nethernet.yaml`, externalTrafficPolicy Cluster); internet via the relay Pi at mom's (Fritz!Box forwards, `apps/minecraft/pi-forward.sh`) |
 | `portainer` | Portainer | cluster-admin: guard its password |
 | `open-webui` | Open WebUI (chat UI for Ollama on the Windows PC over Tailscale) | StatefulSet pinned to k3s-worker-01 (only node with Tailscale), 5 Gi Longhorn; works only while the PC is on; https://chat.home.cedricschippers.dev |
+| `ai-agent`, `ai-waker` | Local AI coding agent: devbox pod (tmux, OpenCode, loop harness) and a Wake-on-LAN relay for the PC | Model runs on the PC (llama-server, alias `coder`); devbox is restricted PSA, no inbound, egress only internet/Tailscale/waker/PC; waker is hostNetwork on k3s-worker-01 (192.168.50.11:9009, token). Repo github.com/cecedabro/local-ai-agent; setup in `apps/ai-agent/README.md` |
 | `ruilingen` | Ruilingen (shift-swap site, own repo `cecedabro/ruilingen-portaal`) | 1 replica (SQLite on RWO); public at ruilingen.app via the tunnel; image bumped by Flux image automation |
 
 ### 6. How the media stack clicks together

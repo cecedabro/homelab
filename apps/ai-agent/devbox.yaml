@@ -1,0 +1,165 @@
+# Devbox for the local AI coding agent (github.com/cecedabro/local-ai-agent): tmux, OpenCode/Pi, git,
+# toolchains and the loop harness. The model itself runs on the PC (llama-server, alias "coder").
+# Reached over Tailscale SSH from inside the container (userspace networking, outbound only), or
+# `kubectl -n ai-agent exec -it devbox-0 -- bash`. See README.md for the setup steps.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-agent
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+# Secrets from OpenBao. WAKER_TOKEN is read from the waker's entry so there is only one copy.
+# ESO only creates the Secret once every property below exists in OpenBao; until then the pod
+# still starts (all references are optional) but has no tokens.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: devbox
+  namespace: ai-agent
+spec:
+  refreshInterval: 1h
+  secretStoreRef: {kind: ClusterSecretStore, name: openbao}
+  target: {name: devbox, creationPolicy: Owner}
+  data:
+    - secretKey: GITHUB_TOKEN     # fine-grained PAT: only the project repo, contents + pull requests r/w
+      remoteRef: {key: ai-agent/devbox, property: GITHUB_TOKEN}
+    - secretKey: TS_AUTHKEY       # one-off auth key, tag:devbox; only needed on first start (state is on the PVC)
+      remoteRef: {key: ai-agent/devbox, property: TS_AUTHKEY}
+    - secretKey: LLAMA_API_KEY    # /etc/llama/api-key on the PC
+      remoteRef: {key: ai-agent/devbox, property: LLAMA_API_KEY}
+    - secretKey: NTFY_TOPIC       # the topic is the password on ntfy.sh
+      remoteRef: {key: ai-agent/devbox, property: NTFY_TOPIC}
+    - secretKey: WAKER_TOKEN
+      remoteRef: {key: ai-agent/waker, property: WAKER_TOKEN}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devbox-config
+  namespace: ai-agent
+data:
+  PC_HOST: ""                                   # PC LAN IP, once known (also in the NetworkPolicy below)
+  PC_SSH_USER: ""                               # WSL user on the PC
+  LLAMA_BASE_URL: ""                            # http://<PC LAN IP>:8080/v1
+  WAKER_URL: http://192.168.50.11:9009          # waker.yaml: hostNetwork on k3s-worker-01
+  NTFY_URL: https://ntfy.sh
+  GIT_AUTHOR_NAME: local-agent
+  GIT_AUTHOR_EMAIL: local-agent@users.noreply.github.com
+  TS_HOSTNAME: devbox
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devbox
+  namespace: ai-agent
+spec:
+  clusterIP: None          # governing service for the StatefulSet; no ports exposed
+  selector: {app: devbox}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: devbox
+  namespace: ai-agent
+spec:
+  serviceName: devbox
+  replicas: 0   # 1 once the image package is public and the OpenBao secrets exist (README.md steps 1-3)
+  selector:
+    matchLabels: {app: devbox}
+  template:
+    metadata:
+      labels: {app: devbox}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        nodeAffinity:   # gpu-01 has the least Longhorn space and runs Jellyfin's transcodes
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
+      containers:
+        - name: devbox
+          # Pinned to a CI build (tag = commit sha in local-ai-agent). Bump by hand: a new image
+          # restarts the pod and kills a running agent loop, so never let it roll automatically.
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:3c3e3d382ac8e13e8a8d5a7b79e85afc993b57cd
+          envFrom:
+            - configMapRef: {name: devbox-config}
+          env:
+            - {name: GITHUB_TOKEN, valueFrom: {secretKeyRef: {name: devbox, key: GITHUB_TOKEN, optional: true}}}
+            - {name: GH_TOKEN, valueFrom: {secretKeyRef: {name: devbox, key: GITHUB_TOKEN, optional: true}}}
+            - {name: TS_AUTHKEY, valueFrom: {secretKeyRef: {name: devbox, key: TS_AUTHKEY, optional: true}}}
+            - {name: LLAMA_API_KEY, valueFrom: {secretKeyRef: {name: devbox, key: LLAMA_API_KEY, optional: true}}}
+            - {name: NTFY_TOPIC, valueFrom: {secretKeyRef: {name: devbox, key: NTFY_TOPIC, optional: true}}}
+            - {name: WAKER_TOKEN, valueFrom: {secretKeyRef: {name: devbox, key: WAKER_TOKEN, optional: true}}}
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {cpu: "4", memory: 8Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: home, mountPath: /home/agent}
+  volumeClaimTemplates:
+    - metadata:
+        name: home
+        # Not in the nightly Longhorn backup (and so not in the B2 off-site copy): the work is in
+        # git on GitHub, and 30 Gi of checkouts and caches would only cost B2 storage. Giving the
+        # volume its own recurring-job label takes it out of the "default" group that
+        # daily-backup uses; it still gets the weekly trim.
+        labels:
+          recurring-job.longhorn.io/source: enabled
+          recurring-job.longhorn.io/weekly-trim: enabled
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn
+        resources:
+          requests: {storage: 30Gi}
+---
+# Default deny, then: DNS, the public internet on web + Tailscale ports (private ranges excluded),
+# the waker on k3s-worker-01. Nothing inbound: Tailscale connects outbound.
+# The PC rule is added once its LAN IP is known (README.md, step 4).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: devbox
+  namespace: ai-agent
+spec:
+  podSelector: {matchLabels: {app: devbox}}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]
+      ports:
+        - {protocol: TCP, port: 443}
+        - {protocol: TCP, port: 80}
+        - {protocol: UDP, port: 41641}
+        - {protocol: UDP, port: 3478}
+    - to:
+        - ipBlock: {cidr: 192.168.50.11/32}   # waker (hostNetwork on k3s-worker-01)
+      ports:
+        - {protocol: TCP, port: 9009}
+    # - to:
+    #     - ipBlock: {cidr: <PC LAN IP>/32}   # llama-server + WSL sshd
+    #   ports:
+    #     - {protocol: TCP, port: 8080}
+    #     - {protocol: TCP, port: 2222}

@@ -152,3 +152,9 @@ Verified: a real client connected and spawned on the survival server over the LA
 |---|---|---|
 | Bazarr 1.6.2 in `media` (Deployment, 1 Gi Longhorn volume `bazarr-config`, ClusterIP), ingress `bazarr.home.cedricschippers.dev`, Homepage tile | `apps/bazarr/`, `apps/kustomization.yaml`, `apps/traefik/ingresses.yaml`, `apps/homepage/values.yaml` | see `apps/bazarr/README.md` |
 | Setup in the browser: login, English language profile, OpenSubtitles account, Sonarr/Radarr connections | live, in Bazarr's volume | re-run via Settings |
+
+## 31 Oct: Local AI agent (cluster side)
+| Change | Where | Undo |
+|---|---|---|
+| Namespaces `ai-agent` (restricted) and `ai-waker` (privileged), devbox StatefulSet (replicas 0 until image + secrets exist; 30 Gi Longhorn, excluded from the nightly backup), NetworkPolicy, waker Deployment (replicas 0 until the PC's MAC is in OpenBao), ExternalSecrets from `secret/ai-agent/*` | `apps/ai-agent/`, `apps/kustomization.yaml` | see `apps/ai-agent/README.md` |
+| New private repo github.com/cecedabro/local-ai-agent (PC scripts, devbox image, harness); its own `k8s/` folder moved here (OpenBao instead of SOPS, ntfy.sh instead of in-cluster ntfy, waker binds to the node's LAN IP) | GitHub | archive/delete the repo |

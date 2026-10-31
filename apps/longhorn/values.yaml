@@ -8,6 +8,11 @@ service:
     type: ClusterIP
 
 defaultSettings:
+  # Scheduling counts each volume's full size, not what it uses. At 100% the nodes were "full"
+  # (30 GiB devbox volume: no node fitted a replica) while the disks were ~25% used. 150% leaves
+  # room; storageMinimalAvailablePercentage (25) still stops new replicas on disks that are
+  # really filling up.
+  storageOverProvisioningPercentage: 150
   # Move pods automatically when a node dies instead of leaving them stuck on its volumes
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
   # `kubectl drain` waits for replicas to be rebuilt elsewhere before the node goes down

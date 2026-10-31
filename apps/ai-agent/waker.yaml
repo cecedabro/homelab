@@ -2,7 +2,7 @@
 # namespace with Pod Security "privileged"; ai-agent itself stays "restricted".
 # hostNetwork pods are not covered by NetworkPolicy, so /wake is protected by WAKER_TOKEN and the
 # server only listens on the node's LAN IP (192.168.50.11:9009), not on Tailscale.
-# replicas: 0 until PC_MAC and WAKER_TOKEN are in OpenBao (secret ai-agent/waker); then set 1.
+# Needs PC_MAC and WAKER_TOKEN in OpenBao (secret ai-agent/waker).
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -19,7 +19,13 @@ metadata:
 spec:
   refreshInterval: 1h
   secretStoreRef: {kind: ClusterSecretStore, name: openbao}
-  target: {name: waker, creationPolicy: Owner}
+  target:
+    name: waker
+    creationPolicy: Owner
+    template:   # trim: values pasted from `openssl rand` / `cat` end in a newline
+      data:
+        PC_MAC: '{{ .PC_MAC | trim }}'
+        WAKER_TOKEN: '{{ .WAKER_TOKEN | trim }}'
   data:
     - secretKey: PC_MAC
       remoteRef: {key: ai-agent/waker, property: PC_MAC}
@@ -33,7 +39,7 @@ metadata:
   namespace: ai-waker
   labels: {app: waker}
 spec:
-  replicas: 0
+  replicas: 1
   strategy: {type: Recreate}   # binds a host port: never two at once
   selector:
     matchLabels: {app: waker}

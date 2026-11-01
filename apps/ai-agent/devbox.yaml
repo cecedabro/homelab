@@ -57,6 +57,8 @@ data:
   GIT_AUTHOR_NAME: local-agent
   GIT_AUTHOR_EMAIL: local-agent@users.noreply.github.com
   TS_HOSTNAME: devbox
+  # Postgres sidecar below: throwaway test database for the agent's `make check` (test data only)
+  DATABASE_URL: postgresql://weather:weather@localhost:5432/weather
 ---
 apiVersion: v1
 kind: Service
@@ -112,6 +114,8 @@ spec:
             - {name: NTFY_TOPIC, valueFrom: {secretKeyRef: {name: devbox, key: NTFY_TOPIC, optional: true}}}
             - {name: WAKER_TOKEN, valueFrom: {secretKeyRef: {name: devbox, key: WAKER_TOKEN, optional: true}}}
           resources:
+            # The limit already exceeds what k3s-worker-02 has (7.6 GiB, ~68% requested); more RAM in
+            # the node would have to come first before raising it.
             requests: {cpu: 500m, memory: 1Gi}
             limits: {cpu: "4", memory: 8Gi}
           securityContext:
@@ -119,6 +123,36 @@ spec:
             capabilities: {drop: [ALL]}
           volumeMounts:
             - {name: home, mountPath: /home/agent}
+            - {name: shm, mountPath: /dev/shm}   # Chromium (Playwright) needs more than the default 64Mi
+        # Test database for the agent, reachable only on localhost inside this pod. Data lives on an
+        # emptyDir: a pod restart starts empty, which is fine for tests. Password is not a secret
+        # (no real data, no network exposure), so it stays in plain text here.
+        - name: postgres
+          image: postgres:16.15-alpine3.24@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          env:
+            - {name: POSTGRES_DB, value: weather}
+            - {name: POSTGRES_USER, value: weather}
+            - {name: POSTGRES_PASSWORD, value: weather}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}   # subdir: initdb wants to own it
+          readinessProbe:
+            exec: {command: [pg_isready, -h, 127.0.0.1, -U, weather]}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: pgdata, mountPath: /var/lib/postgresql/data}
+            - {name: pgrun, mountPath: /var/run/postgresql}
+      volumes:
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: 512Mi}   # counts toward the devbox memory limit
+        - name: pgdata
+          emptyDir: {sizeLimit: 2Gi}
+        - name: pgrun
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: home

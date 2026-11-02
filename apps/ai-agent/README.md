@@ -15,7 +15,7 @@ them, so it needs hostNetwork, which *restricted* forbids. hostNetwork pods are 
 NetworkPolicy, so `/wake` needs the token.
 
 The devbox has **no inbound access at all**. Its egress is: DNS, the internet on 80/443 plus
-Tailscale's ports (private ranges excluded), the waker, and (once added) the PC on 8080/2222. It
+Tailscale's ports (private ranges excluded), the waker, and (once added) the PC on 8080/2223. It
 cannot reach other services in the cluster or on the LAN.
 
 ## Setup (your steps)
@@ -39,7 +39,7 @@ cannot reach other services in the cluster or on the LAN.
    so a missing image or secret doesn't page you) and commit; Flux starts it.
 4. **The PC on the LAN:** reserve **192.168.50.17** for the PC in the router (MAC `30-9C-23-6A-7E-39`).
    `devbox.yaml` already uses it (`PC_HOST`, `LLAMA_BASE_URL`, NetworkPolicy). The PC runs Windows 10,
-   so WSL is behind NAT and `ai-power.ps1` forwards 8080/2222 from the PC's LAN address into WSL.
+   so WSL is behind NAT and `ai-power.ps1` forwards 8080/2223 from the PC's LAN address into WSL.
 5. **Waker:** set `replicas: 1` in `waker.yaml` once `ai-agent/waker` is in OpenBao (and Wake-on-LAN
    is set up on the PC, `pc/README.md` Phase 2).
 6. **PC key:** the devbox generates its own SSH key on first start. Get the public half with

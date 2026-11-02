@@ -204,4 +204,4 @@ spec:
         - ipBlock: {cidr: 192.168.50.17/32}   # the PC: llama-server + WSL sshd
       ports:
         - {protocol: TCP, port: 8080}
-        - {protocol: TCP, port: 2222}
+        - {protocol: TCP, port: 2223}

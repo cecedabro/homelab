@@ -55,8 +55,19 @@ spec:
                     rclone check "/nas/$d" "offsite:$d" --one-way --size-only --log-level ERROR
                   done
                   echo "offsite backup ok: $(date -u +%FT%TZ)"
+                  # Success ping to ntfy (the alertmanager URL minus its ?template query). Best effort: a
+                  # failed ping must not fail the backup. Failures and misses are alerted by Prometheus
+                  # (BackupJobFailed, OffsiteBackupStale).
+                  if [ -n "${NTFY_URL:-}" ]; then
+                    wget -q -T 15 -O /dev/null --header "Title: B2 backup ok" --header "Tags: white_check_mark" \
+                      --post-data "Off-site backup finished $(date -u +%F\ %H:%M) UTC (longhorn-backups + k3s-backups)" \
+                      "${NTFY_URL%%\?*}" || echo "ntfy ping failed (ignored)"
+                  fi
               envFrom:
                 - secretRef: {name: offsite-backup-b2}
+              env:
+                - name: NTFY_URL
+                  valueFrom: {secretKeyRef: {name: offsite-backup-ntfy, key: url, optional: true}}
               resources:
                 requests: {cpu: 50m, memory: 128Mi}
                 limits: {memory: 512Mi}

@@ -27,6 +27,23 @@ spec:
 #   filterTags: {pattern: '^main-(?P<ts>[0-9]{14})-[a-f0-9]+$', extract: '$ts'}
 #   policy: {numerical: {order: asc}}
 ---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata: {name: scrum-agent, namespace: flux-system}
+spec:
+  image: ghcr.io/cecedabro/scrum-agent   # public package, no credentials
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata: {name: scrum-agent, namespace: flux-system}
+spec:
+  imageRepositoryRef: {name: scrum-agent}
+  filterTags:
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'   # releases only (vX.Y.Z tag -> image X.Y.Z)
+  policy:
+    semver: {range: ">=0.1.0"}
+---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata: {name: homelab-write, namespace: flux-system}

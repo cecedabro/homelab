@@ -1,0 +1,53 @@
+# Worker: summaries and @Agent questions via llama-server on the PC; wakes the PC via the waker.
+# Tolerates an asleep/paused PC: it checks the model first and leaves jobs queued while it is down.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scrum-agent-worker
+  namespace: scrum-agent
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: scrum-agent-worker}
+  template:
+    metadata:
+      labels: {app: scrum-agent-worker}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        nodeAffinity:   # keep off the GPU node and the fullest worker when possible
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01, k3s-worker-02]}
+      containers:
+        - name: worker
+          image: ghcr.io/cecedabro/scrum-agent:0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+          command: [python, -m, app.worker]
+          envFrom:
+            - secretRef: {name: scrum-agent-app}
+          env:
+            - {name: APP_ENV, value: production}
+            - {name: TEAM_USER, value: team}
+            - {name: LLM_BASE_URL, value: "http://192.168.50.17:8080/v1"}
+            - {name: LLM_MODEL, value: coder}
+            - {name: WAKER_URL, value: "http://192.168.50.11:9009"}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 384Mi}
+      volumes:
+        - name: tmp
+          emptyDir: {}

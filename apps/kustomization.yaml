@@ -29,6 +29,7 @@ resources:
   - flaresolverr/deployment.yaml
   - bazarr/deployment.yaml
   - ai-agent
+  - scrum-agent
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
   - system-upgrade

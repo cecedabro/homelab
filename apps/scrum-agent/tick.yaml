@@ -1,0 +1,49 @@
+# Every 10 minutes: Teams reminders (weekly overview, deadlines, sprint) and retention.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scrum-agent-tick
+  namespace: scrum-agent
+spec:
+  schedule: "*/10 * * * *"
+  timeZone: Europe/Amsterdam
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 240
+      template:
+        metadata:
+          labels: {app: scrum-agent-tick}
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: tick
+              image: ghcr.io/cecedabro/scrum-agent:0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+              command: [python, -m, app.tick]
+              envFrom:
+                - secretRef: {name: scrum-agent-app}
+              env:
+                - {name: APP_ENV, value: production}
+                - {name: TEAM_USER, value: team}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              volumeMounts:
+                - {name: tmp, mountPath: /tmp}
+              resources:
+                requests: {cpu: 10m, memory: 64Mi}
+                limits: {memory: 128Mi}
+          volumes:
+            - name: tmp
+              emptyDir: {}

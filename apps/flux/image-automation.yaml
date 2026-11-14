@@ -39,8 +39,9 @@ kind: ImagePolicy
 metadata: {name: scrum-agent, namespace: flux-system}
 spec:
   imageRepositoryRef: {name: scrum-agent}
-  filterTags:
-    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'   # releases only (vX.Y.Z tag -> image X.Y.Z)
+  filterTags:   # this app's release workflow tags images vX.Y.Z (unlike ruilingen's X.Y.Z)
+    pattern: '^v(?P<ver>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$ver'
   policy:
     semver: {range: ">=0.1.0"}
 ---

@@ -30,7 +30,7 @@ spec:
       containers:
         - name: worker
           image: ghcr.io/cecedabro/scrum-agent:v1.0.0 # {"$imagepolicy": "flux-system:scrum-agent"}
-          command: [python, -c, "from app.worker import main; main()"] # image 0.1.0 has no __main__ guard in app/worker.py; back to `-m app.worker` once fixed
+          command: [python, -m, app.worker]
           envFrom:
             - secretRef: {name: scrum-agent-app}
           env:

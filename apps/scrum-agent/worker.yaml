@@ -29,7 +29,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01, k3s-worker-02]}
       containers:
         - name: worker
-          image: ghcr.io/cecedabro/scrum-agent:v1.0.2 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.3 # {"$imagepolicy": "flux-system:scrum-agent"}
           command: [python, -m, app.worker]
           envFrom:
             - secretRef: {name: scrum-agent-app}

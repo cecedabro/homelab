@@ -28,7 +28,7 @@ spec:
             seccompProfile: {type: RuntimeDefault}
           containers:
             - name: tick
-              image: ghcr.io/cecedabro/scrum-agent:v1.0.2 # {"$imagepolicy": "flux-system:scrum-agent"}
+              image: ghcr.io/cecedabro/scrum-agent:v1.0.3 # {"$imagepolicy": "flux-system:scrum-agent"}
               command: [python, -m, app.tick]
               envFrom:
                 - secretRef: {name: scrum-agent-app}

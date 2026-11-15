@@ -29,7 +29,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01, k3s-worker-02]}
       initContainers:
         - name: wait-for-db
-          image: ghcr.io/cecedabro/scrum-agent:v1.0.1 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.2 # {"$imagepolicy": "flux-system:scrum-agent"}
           command:
             - python
             - -c
@@ -50,7 +50,7 @@ spec:
             requests: {cpu: 10m, memory: 32Mi}
             limits: {memory: 64Mi}
         - name: migrate
-          image: ghcr.io/cecedabro/scrum-agent:v1.0.1 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.2 # {"$imagepolicy": "flux-system:scrum-agent"}
           command: [python, -m, alembic, upgrade, head]
           envFrom:
             - secretRef: {name: scrum-agent-app}
@@ -67,7 +67,7 @@ spec:
             limits: {memory: 256Mi}
       containers:
         - name: web
-          image: ghcr.io/cecedabro/scrum-agent:v1.0.1 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.2 # {"$imagepolicy": "flux-system:scrum-agent"}
           ports:
             - {name: http, containerPort: 8000}
           envFrom:

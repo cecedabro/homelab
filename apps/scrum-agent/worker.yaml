@@ -21,7 +21,7 @@ spec:
         runAsGroup: 10001
         seccompProfile: {type: RuntimeDefault}
       affinity:
-        nodeAffinity:   # keep off the GPU node and the fullest worker when possible
+        nodeAffinity: # keep off the GPU node and the fullest worker when possible
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -29,8 +29,8 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01, k3s-worker-02]}
       containers:
         - name: worker
-          image: ghcr.io/cecedabro/scrum-agent:v0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
-          command: [python, -c, "from app.worker import main; main()"]   # image 0.1.0 has no __main__ guard in app/worker.py; back to `-m app.worker` once fixed
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+          command: [python, -c, "from app.worker import main; main()"] # image 0.1.0 has no __main__ guard in app/worker.py; back to `-m app.worker` once fixed
           envFrom:
             - secretRef: {name: scrum-agent-app}
           env:

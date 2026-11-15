@@ -21,7 +21,7 @@ spec:
         runAsGroup: 10001
         seccompProfile: {type: RuntimeDefault}
       affinity:
-        nodeAffinity:   # keep off the GPU node and the fullest worker when possible
+        nodeAffinity: # keep off the GPU node and the fullest worker when possible
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -29,7 +29,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01, k3s-worker-02]}
       initContainers:
         - name: wait-for-db
-          image: ghcr.io/cecedabro/scrum-agent:v0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.0 # {"$imagepolicy": "flux-system:scrum-agent"}
           command:
             - python
             - -c
@@ -50,7 +50,7 @@ spec:
             requests: {cpu: 10m, memory: 32Mi}
             limits: {memory: 64Mi}
         - name: migrate
-          image: ghcr.io/cecedabro/scrum-agent:v0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.0 # {"$imagepolicy": "flux-system:scrum-agent"}
           command: [python, -m, alembic, upgrade, head]
           envFrom:
             - secretRef: {name: scrum-agent-app}
@@ -67,7 +67,7 @@ spec:
             limits: {memory: 256Mi}
       containers:
         - name: web
-          image: ghcr.io/cecedabro/scrum-agent:v0.1.0 # {"$imagepolicy": "flux-system:scrum-agent"}
+          image: ghcr.io/cecedabro/scrum-agent:v1.0.0 # {"$imagepolicy": "flux-system:scrum-agent"}
           ports:
             - {name: http, containerPort: 8000}
           envFrom:

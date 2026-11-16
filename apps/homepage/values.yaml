@@ -67,12 +67,22 @@ config:
             description: Shift-swap site for colleagues (public, via Cloudflare)
             icon: mdi-swap-horizontal
             siteMonitor: http://ruilingen.ruilingen.svc.cluster.local/healthz
+        - Woodshed:
+            href: https://guitar.home.cedricschippers.dev
+            description: Guitar practice app (home network and Tailscale; login = APP_PASSWORD)
+            icon: mdi-guitar-acoustic
+            siteMonitor: http://woodshed.woodshed.svc.cluster.local/healthz
     - AI:
         - Open WebUI:
             href: https://chat.home.cedricschippers.dev
             description: Chat with the models on the Windows PC (Ollama over Tailscale, PC must be on)
             icon: open-webui
             siteMonitor: http://open-webui.open-webui.svc.cluster.local/health
+        - Agent status:
+            href: https://agent-status.home.cedricschippers.dev
+            description: Local coding agent - model state, job queue, runs and token speed (writes need the token)
+            icon: mdi-robot-outline
+            siteMonitor: http://agent-status.ai-agent.svc.cluster.local:8080/healthz
     - Media:
         - Jellyfin:
             href: https://jellyfin.cedricschippers.dev

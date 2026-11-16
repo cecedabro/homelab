@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: woodshed
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: woodshed
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - app.yaml
+  - networkpolicy.yaml
+  - ingress.yaml

@@ -1,0 +1,149 @@
+# agent-status: status page, job queue, model lease and OpenAI-compatible gateway in front of the PC's
+# llama-server (github.com/cecedabro/local-ai-agent, status/). One Python file + SQLite on a PVC.
+# Reachable on the LAN and over Tailscale (Traefik, like the other *.home hosts); reads are open, writes
+# and chat need STATUS_TOKEN. Not exposed through the Cloudflare tunnel.
+# Secret `agent-status` (STATUS_TOKEN, GATEWAY_CLIENTS, LLAMA_API_KEY) is created by hand with kubectl, not
+# from OpenBao (see docs/changes-2026-10.md). Undo: remove status.yaml from kustomization.yaml, delete the
+# objects (Flux prune is off) and the PVC.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-status-data
+  namespace: ai-agent
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-status
+  namespace: ai-agent
+spec:
+  selector: {app: agent-status}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-status
+  namespace: ai-agent
+spec:
+  replicas: 1
+  strategy: {type: Recreate}   # SQLite on an RWO volume
+  selector:
+    matchLabels: {app: agent-status}
+  template:
+    metadata:
+      labels: {app: agent-status}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
+      containers:
+        - name: status
+          # Pinned to a CI build (tag = commit sha in local-ai-agent); bump by hand.
+          image: ghcr.io/cecedabro/local-ai-agent-status:2751ad2e7fd2660fd49ae5498ee561bf1f1ff46c
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - {name: LLAMA_BASE_URL, value: "http://192.168.50.17:8080/v1"}
+            - {name: JOB_OWNERS, value: cecedabro}
+            - {name: STATUS_DB, value: /data/status.db}
+            - {name: STATUS_TOKEN, valueFrom: {secretKeyRef: {name: agent-status, key: STATUS_TOKEN}}}
+            - {name: GATEWAY_CLIENTS, valueFrom: {secretKeyRef: {name: agent-status, key: GATEWAY_CLIENTS}}}
+            - {name: LLAMA_API_KEY, valueFrom: {secretKeyRef: {name: agent-status, key: LLAMA_API_KEY}}}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: agent-status-data}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agent-status
+  namespace: ai-agent
+  annotations: {traefik.ingress.kubernetes.io/router.entrypoints: websecure}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: agent-status.home.cedricschippers.dev
+      http: {paths: [{path: /, pathType: Prefix, backend: {service: {name: agent-status, port: {number: 8080}}}}]}
+---
+# Ingress: Traefik, the devbox (queue worker + loop), Homepage, monitoring. Egress: DNS and the PC (llama-server).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-status
+  namespace: ai-agent
+spec:
+  podSelector: {matchLabels: {app: agent-status}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: devbox}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: homepage}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - ipBlock: {cidr: 192.168.50.0/24}
+        - ipBlock: {cidr: 100.64.0.0/10}
+        # each node's flannel/cni0 address: kube-proxy SNAT and kubelet probes
+        - ipBlock: {cidr: 10.42.0.0/32}
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}
+        - ipBlock: {cidr: 10.42.4.1/32}
+        - ipBlock: {cidr: 10.42.5.0/32}
+        - ipBlock: {cidr: 10.42.5.1/32}
+        - ipBlock: {cidr: 10.42.7.0/32}
+        - ipBlock: {cidr: 10.42.7.1/32}
+      ports:
+        - {protocol: TCP, port: 8080}
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - ipBlock: {cidr: 192.168.50.17/32}   # the PC: llama-server
+      ports:
+        - {protocol: TCP, port: 8080}

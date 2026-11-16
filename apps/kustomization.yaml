@@ -30,6 +30,7 @@ resources:
   - bazarr/deployment.yaml
   - ai-agent
   - scrum-agent
+  - woodshed
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
   - system-upgrade

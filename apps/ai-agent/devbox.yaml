@@ -52,6 +52,8 @@ data:
   PC_HOST: 192.168.50.17                        # PC LAN IP (DHCP reservation; also in the NetworkPolicy below)
   PC_SSH_USER: cedric                           # WSL user on the PC
   LLAMA_BASE_URL: http://192.168.50.17:8080/v1  # Windows portproxy -> llama-server in WSL
+  STATUS_URL: http://agent-status.ai-agent.svc.cluster.local:8080   # status.yaml (queue worker + loop events)
+  QUEUE_OWNERS: cecedabro
   WAKER_URL: http://192.168.50.11:9009          # waker.yaml: hostNetwork on k3s-worker-01
   NTFY_URL: https://ntfy.sh
   GIT_AUTHOR_NAME: local-agent
@@ -103,7 +105,7 @@ spec:
         - name: devbox
           # Pinned to a CI build (tag = commit sha in local-ai-agent). Bump by hand: a new image
           # restarts the pod and kills a running agent loop, so never let it roll automatically.
-          image: ghcr.io/cecedabro/local-ai-agent-devbox:db7631b5cc5ce6ba9403eef6079bff404bc567c1
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:dc3688c5d84b110e48290acb64fcb635409d9889
           envFrom:
             - configMapRef: {name: devbox-config}
           env:
@@ -113,6 +115,7 @@ spec:
             - {name: LLAMA_API_KEY, valueFrom: {secretKeyRef: {name: devbox, key: LLAMA_API_KEY, optional: true}}}
             - {name: NTFY_TOPIC, valueFrom: {secretKeyRef: {name: devbox, key: NTFY_TOPIC, optional: true}}}
             - {name: WAKER_TOKEN, valueFrom: {secretKeyRef: {name: devbox, key: WAKER_TOKEN, optional: true}}}
+            - {name: STATUS_TOKEN, valueFrom: {secretKeyRef: {name: agent-status, key: STATUS_TOKEN, optional: true}}}
           resources:
             # The limit already exceeds what k3s-worker-02 has (7.6 GiB, ~68% requested); more RAM in
             # the node would have to come first before raising it.
@@ -196,6 +199,10 @@ spec:
         - {protocol: TCP, port: 80}
         - {protocol: UDP, port: 41641}
         - {protocol: UDP, port: 3478}
+    - to:
+        - podSelector: {matchLabels: {app: agent-status}}   # status service (status.yaml)
+      ports:
+        - {protocol: TCP, port: 8080}
     - to:
         - ipBlock: {cidr: 192.168.50.11/32}   # waker (hostNetwork on k3s-worker-01)
       ports:

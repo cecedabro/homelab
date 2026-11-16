@@ -59,7 +59,7 @@ spec:
       containers:
         - name: status
           # Pinned to a CI build (tag = commit sha in local-ai-agent); bump by hand.
-          image: ghcr.io/cecedabro/local-ai-agent-status:2751ad2e7fd2660fd49ae5498ee561bf1f1ff46c
+          image: ghcr.io/cecedabro/local-ai-agent-status:7abc6c0dd01f6addb2fdb80780bb59883fe3a344
           ports:
             - {name: http, containerPort: 8080}
           env:

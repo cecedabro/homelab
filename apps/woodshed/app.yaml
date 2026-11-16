@@ -55,7 +55,7 @@ spec:
       initContainers:
         - name: wait-for-db
           image: postgres:16.15
-          command: ["sh", "-c", "until pg_isready -h woodshed-db -p 5432; do sleep 2; done"]
+          command: ["sh", "-c", "until pg_isready -h woodshed-db -p 5432 -U woodshed; do sleep 2; done"]
           securityContext: &restricted
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

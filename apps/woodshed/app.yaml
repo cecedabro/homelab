@@ -28,7 +28,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate          # RWO media volume; migrations never run twice at once
+    type: Recreate # RWO media volume; migrations never run twice at once
   selector:
     matchLabels:
       app.kubernetes.io/name: woodshed
@@ -65,7 +65,7 @@ spec:
             requests: {cpu: 10m, memory: 16Mi}
             limits: {memory: 64Mi}
         - name: migrate
-          image: ghcr.io/cecedabro/woodshed:0.1.0 # {"$imagepolicy": "flux-system:woodshed"}
+          image: ghcr.io/cecedabro/woodshed:0.1.1 # {"$imagepolicy": "flux-system:woodshed"}
           workingDir: /app
           command: ["alembic", "upgrade", "head"]
           envFrom:
@@ -85,7 +85,7 @@ spec:
               mountPath: /tmp
       containers:
         - name: app
-          image: ghcr.io/cecedabro/woodshed:0.1.0 # {"$imagepolicy": "flux-system:woodshed"}
+          image: ghcr.io/cecedabro/woodshed:0.1.1 # {"$imagepolicy": "flux-system:woodshed"}
           ports:
             - name: http
               containerPort: 8000

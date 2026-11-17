@@ -2,7 +2,7 @@
 # llama-server (github.com/cecedabro/local-ai-agent, status/). One Python file + SQLite on a PVC.
 # Reachable on the LAN and over Tailscale (Traefik, like the other *.home hosts); reads are open, writes
 # and chat need STATUS_TOKEN. Not exposed through the Cloudflare tunnel.
-# Secret `agent-status` (STATUS_TOKEN, GATEWAY_CLIENTS, LLAMA_API_KEY) is created by hand with kubectl, not
+# Image tag is updated by Flux (ImagePolicy agent-status, plain X.Y.Z). Secret `agent-status` (STATUS_TOKEN, GATEWAY_CLIENTS, LLAMA_API_KEY) is created by hand with kubectl, not
 # from OpenBao (see docs/changes-2026-10.md). Undo: remove status.yaml from kustomization.yaml, delete the
 # objects (Flux prune is off) and the PVC.
 apiVersion: v1
@@ -58,8 +58,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: status
-          # Pinned to a CI build (tag = commit sha in local-ai-agent); bump by hand.
-          image: ghcr.io/cecedabro/local-ai-agent-status:7abc6c0dd01f6addb2fdb80780bb59883fe3a344
+          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.1 # {"$imagepolicy": "flux-system:agent-status"}
           ports:
             - {name: http, containerPort: 8080}
           env:

@@ -92,3 +92,21 @@ spec:
     extract: '$ver'
   policy:
     semver: {range: ">=0.1.0"}
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata: {name: agent-status, namespace: flux-system}
+spec:
+  image: ghcr.io/cecedabro/local-ai-agent-status   # public package; NOT the devbox image (that one is pinned by hand)
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata: {name: agent-status, namespace: flux-system}
+spec:
+  imageRepositoryRef: {name: agent-status}
+  filterTags:
+    pattern: '^(?P<ver>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$ver'
+  policy:
+    semver: {range: ">=0.1.0"}

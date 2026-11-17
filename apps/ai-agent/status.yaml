@@ -34,7 +34,7 @@ metadata:
   namespace: ai-agent
 spec:
   replicas: 1
-  strategy: {type: Recreate}   # SQLite on an RWO volume
+  strategy: {type: Recreate} # SQLite on an RWO volume
   selector:
     matchLabels: {app: agent-status}
   template:
@@ -58,7 +58,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: status
-          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.1 # {"$imagepolicy": "flux-system:agent-status"}
+          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.2 # {"$imagepolicy": "flux-system:agent-status"}
           ports:
             - {name: http, containerPort: 8080}
           env:
@@ -143,6 +143,6 @@ spec:
         - {protocol: UDP, port: 53}
         - {protocol: TCP, port: 53}
     - to:
-        - ipBlock: {cidr: 192.168.50.17/32}   # the PC: llama-server
+        - ipBlock: {cidr: 192.168.50.17/32} # the PC: llama-server
       ports:
         - {protocol: TCP, port: 8080}

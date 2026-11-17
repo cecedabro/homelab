@@ -58,7 +58,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: status
-          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.3 # {"$imagepolicy": "flux-system:agent-status"}
+          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.4 # {"$imagepolicy": "flux-system:agent-status"}
           ports:
             - {name: http, containerPort: 8080}
           env:
@@ -68,7 +68,7 @@ spec:
             - {name: STATUS_TOKEN, valueFrom: {secretKeyRef: {name: agent-status, key: STATUS_TOKEN}}}
             - {name: GATEWAY_CLIENTS, valueFrom: {secretKeyRef: {name: agent-status, key: GATEWAY_CLIENTS}}}
             - {name: LLAMA_API_KEY, valueFrom: {secretKeyRef: {name: agent-status, key: LLAMA_API_KEY}}}
-            - {name: ADMIN_USER, value: cedric}   # first admin account (accounts feature); ignored by versions without it
+            - {name: ADMIN_USER, value: cedric} # first admin account (accounts feature); ignored by versions without it
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: agent-status, key: ADMIN_PASSWORD}}}
           livenessProbe:
             httpGet: {path: /healthz, port: http}

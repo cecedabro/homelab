@@ -105,7 +105,7 @@ spec:
         - name: devbox
           # Pinned to a CI build (tag = commit sha in local-ai-agent). Bump by hand: a new image
           # restarts the pod and kills a running agent loop, so never let it roll automatically.
-          image: ghcr.io/cecedabro/local-ai-agent-devbox:dc3688c5d84b110e48290acb64fcb635409d9889
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:c11592c6c3aa7f1255df1227c15fb4cc15afb4d3
           envFrom:
             - configMapRef: {name: devbox-config}
           env:

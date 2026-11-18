@@ -68,6 +68,7 @@ spec:
             - {name: STATUS_TOKEN, valueFrom: {secretKeyRef: {name: agent-status, key: STATUS_TOKEN}}}
             - {name: GATEWAY_CLIENTS, valueFrom: {secretKeyRef: {name: agent-status, key: GATEWAY_CLIENTS}}}
             - {name: LLAMA_API_KEY, valueFrom: {secretKeyRef: {name: agent-status, key: LLAMA_API_KEY}}}
+            - {name: CHAT_URL, value: "https://dewdrop.cedricschippers.dev"}   # "full chat" link on the page
             - {name: ADMIN_USER, value: cedric} # first admin account (accounts feature); ignored by versions without it
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: agent-status, key: ADMIN_PASSWORD}}}
           livenessProbe:

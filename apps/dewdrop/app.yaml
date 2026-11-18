@@ -57,6 +57,9 @@ spec:
             - {name: STATUS_URL, value: "http://agent-status.ai-agent.svc.cluster.local:8080"}
             - {name: ADMIN_USER, value: cedric}
             - {name: SECURE_COOKIES, value: "1"}
+            - {name: RP_ID, value: dewdrop.cedricschippers.dev}          # passkeys
+            - {name: ORIGIN, value: "https://dewdrop.cedricschippers.dev"}
+            - {name: SEARXNG_URL, value: "http://searxng.searxng.svc.cluster.local:8080"}
             - {name: GATEWAY_KEY, valueFrom: {secretKeyRef: {name: dewdrop, key: GATEWAY_KEY}}}
             - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: dewdrop, key: ADMIN_PASSWORD}}}
           livenessProbe:

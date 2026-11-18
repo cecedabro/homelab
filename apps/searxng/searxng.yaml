@@ -1,0 +1,123 @@
+# Private SearXNG for the Dewdrop chat (web search). Cluster-internal only: no Ingress, no tunnel route.
+# JSON output on, limiter off (only dewdrop can reach it). Secret `searxng` (SEARXNG_SECRET) is created by
+# hand with kubectl. Pinned image: bump by hand. Undo: remove `- searxng` from apps/kustomization.yaml and
+# `kubectl delete ns searxng` (Flux prune is off).
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: searxng-settings}
+data:
+  settings.yml: |
+    use_default_settings: true
+    general:
+      instance_name: dewdrop-search
+    search:
+      formats: [html, json]
+    server:
+      bind_address: "0.0.0.0"
+      port: 8080
+      limiter: false
+      image_proxy: false
+    ui:
+      static_use_hash: true
+---
+apiVersion: v1
+kind: Service
+metadata: {name: searxng}
+spec:
+  selector: {app: searxng}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: searxng}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: searxng}
+  template:
+    metadata:
+      labels: {app: searxng}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 977
+        runAsGroup: 977
+        fsGroup: 977
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: searxng
+          image: searxng/searxng:2026.11.17-b99cf7496
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - {name: SEARXNG_SETTINGS_PATH, value: /config/settings.yml}
+            - {name: SEARXNG_BASE_URL, value: "http://searxng.searxng.svc.cluster.local:8080/"}
+            - {name: SEARXNG_SECRET, valueFrom: {secretKeyRef: {name: searxng, key: SEARXNG_SECRET}}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 30
+            failureThreshold: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: cache, mountPath: /var/cache/searxng}
+      volumes:
+        - name: config
+          configMap: {name: searxng-settings}
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+---
+# Ingress: only the dewdrop namespace (+ kubelet/node addresses for probes). Egress: DNS and public HTTP(S)
+# for the search engines (no FQDN filtering in kube-router, so all public 80/443).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: searxng}
+spec:
+  podSelector: {matchLabels: {app: searxng}}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: dewdrop}}
+        # each node's flannel/cni0 address: kube-proxy SNAT and kubelet probes
+        - ipBlock: {cidr: 10.42.0.0/32}
+        - ipBlock: {cidr: 10.42.0.1/32}
+        - ipBlock: {cidr: 10.42.1.0/32}
+        - ipBlock: {cidr: 10.42.1.1/32}
+        - ipBlock: {cidr: 10.42.2.0/32}
+        - ipBlock: {cidr: 10.42.2.1/32}
+        - ipBlock: {cidr: 10.42.4.0/32}
+        - ipBlock: {cidr: 10.42.4.1/32}
+        - ipBlock: {cidr: 10.42.5.0/32}
+        - ipBlock: {cidr: 10.42.5.1/32}
+        - ipBlock: {cidr: 10.42.7.0/32}
+        - ipBlock: {cidr: 10.42.7.1/32}
+      ports:
+        - {protocol: TCP, port: 8080}
+  egress:
+    - to:
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+          podSelector: {matchLabels: {k8s-app: kube-dns}}
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]
+      ports:
+        - {protocol: TCP, port: 443}
+        - {protocol: TCP, port: 80}

@@ -32,6 +32,7 @@ resources:
   - scrum-agent
   - woodshed
   - dewdrop
+  - searxng
   - qbittorrent/deployment.yaml
   - k3s-backup/cronjob.yaml
   - system-upgrade

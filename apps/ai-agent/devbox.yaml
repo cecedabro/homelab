@@ -106,7 +106,7 @@ spec:
         - name: devbox
           # Flux writes the newest X.Y.Z tag here (ImagePolicy agent-devbox) but, with updateStrategy OnDelete,
           # the pod only restarts when devbox-rollout finds the agent idle. To roll back, pin an older tag by hand.
-          image: ghcr.io/cecedabro/local-ai-agent-devbox:0.1.0 # {"$imagepolicy": "flux-system:agent-devbox"}
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:0.1.1 # {"$imagepolicy": "flux-system:agent-devbox"}
           envFrom:
             - configMapRef: {name: devbox-config}
           env:

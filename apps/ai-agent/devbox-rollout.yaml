@@ -35,7 +35,7 @@ kind: ConfigMap
 metadata: {name: devbox-rollout-script, namespace: ai-agent}
 data:
   rollout.py: |
-    import json, os, ssl, sys, urllib.request, urllib.error
+    import json, os, ssl, sys, time, urllib.request, urllib.error
     SA = "/var/run/secrets/kubernetes.io/serviceaccount"
     API = "https://kubernetes.default.svc"
     ns = open(SA + "/namespace").read().strip()
@@ -43,14 +43,19 @@ data:
     ctx = ssl.create_default_context(cafile=SA + "/ca.crt")
 
     def kube(method, path):
-        req = urllib.request.Request(API + path, method=method, headers={"Authorization": "Bearer " + tok})
-        try:
-            with urllib.request.urlopen(req, context=ctx, timeout=20) as r:
-                return json.load(r)
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return None
-            raise
+        for attempt in range(10):
+            req = urllib.request.Request(API + path, method=method, headers={"Authorization": "Bearer " + tok})
+            try:
+                with urllib.request.urlopen(req, context=ctx, timeout=20) as r:
+                    return json.load(r)
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    return None
+                raise
+            except (urllib.error.URLError, ConnectionError, TimeoutError):
+                if attempt == 9:
+                    raise
+                time.sleep(3)
 
     sts = kube("GET", f"/apis/apps/v1/namespaces/{ns}/statefulsets/devbox")
     spec_image = next(c["image"] for c in sts["spec"]["template"]["spec"]["containers"] if c["name"] == "devbox")
@@ -64,8 +69,17 @@ data:
     req = urllib.request.Request(
         os.environ["STATUS_URL"].rstrip("/") + "/api/devbox", data=body, method="POST",
         headers={"Authorization": "Bearer " + os.environ["STATUS_TOKEN"], "Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        idle = bool(json.load(r).get("idle"))
+    # a fresh pod's first connections can fail until the NetworkPolicy is programmed: retry
+    for attempt in range(10):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                idle = bool(json.load(r).get("idle"))
+            break
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
+            print(f"status unreachable ({e}), retry {attempt + 1}/10", flush=True)
+            if attempt == 9:
+                raise
+            time.sleep(3)
     print(f"pending={pending} idle={idle} running={run_image} spec={spec_image}", flush=True)
     if pending and idle:
         kube("DELETE", f"/api/v1/namespaces/{ns}/pods/devbox-0")

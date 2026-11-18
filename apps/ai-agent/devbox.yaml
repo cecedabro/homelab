@@ -24,7 +24,7 @@ spec:
   target:
     name: devbox
     creationPolicy: Owner
-    template:   # trim: values pasted from `openssl rand` / `cat` end in a newline
+    template: # trim: values pasted from `openssl rand` / `cat` end in a newline
       data:
         GITHUB_TOKEN: '{{ .GITHUB_TOKEN | trim }}'
         TS_AUTHKEY: '{{ .TS_AUTHKEY | trim }}'
@@ -32,13 +32,13 @@ spec:
         NTFY_TOPIC: '{{ .NTFY_TOPIC | trim }}'
         WAKER_TOKEN: '{{ .WAKER_TOKEN | trim }}'
   data:
-    - secretKey: GITHUB_TOKEN     # fine-grained PAT: only the project repo, contents + pull requests r/w
+    - secretKey: GITHUB_TOKEN # fine-grained PAT: only the project repo, contents + pull requests r/w
       remoteRef: {key: ai-agent/devbox, property: GITHUB_TOKEN}
-    - secretKey: TS_AUTHKEY       # one-off auth key, tag:devbox; only needed on first start (state is on the PVC)
+    - secretKey: TS_AUTHKEY # one-off auth key, tag:devbox; only needed on first start (state is on the PVC)
       remoteRef: {key: ai-agent/devbox, property: TS_AUTHKEY}
-    - secretKey: LLAMA_API_KEY    # /etc/llama/api-key on the PC
+    - secretKey: LLAMA_API_KEY # /etc/llama/api-key on the PC
       remoteRef: {key: ai-agent/devbox, property: LLAMA_API_KEY}
-    - secretKey: NTFY_TOPIC       # the topic is the password on ntfy.sh
+    - secretKey: NTFY_TOPIC # the topic is the password on ntfy.sh
       remoteRef: {key: ai-agent/devbox, property: NTFY_TOPIC}
     - secretKey: WAKER_TOKEN
       remoteRef: {key: ai-agent/waker, property: WAKER_TOKEN}
@@ -49,12 +49,12 @@ metadata:
   name: devbox-config
   namespace: ai-agent
 data:
-  PC_HOST: 192.168.50.17                        # PC LAN IP (DHCP reservation; also in the NetworkPolicy below)
-  PC_SSH_USER: cedric                           # WSL user on the PC
-  LLAMA_BASE_URL: http://192.168.50.17:8080/v1  # Windows portproxy -> llama-server in WSL
-  STATUS_URL: http://agent-status.ai-agent.svc.cluster.local:8080   # status.yaml (queue worker + loop events)
+  PC_HOST: 192.168.50.17 # PC LAN IP (DHCP reservation; also in the NetworkPolicy below)
+  PC_SSH_USER: cedric # WSL user on the PC
+  LLAMA_BASE_URL: http://192.168.50.17:8080/v1 # Windows portproxy -> llama-server in WSL
+  STATUS_URL: http://agent-status.ai-agent.svc.cluster.local:8080 # status.yaml (queue worker + loop events)
   QUEUE_OWNERS: cecedabro
-  WAKER_URL: http://192.168.50.11:9009          # waker.yaml: hostNetwork on k3s-worker-01
+  WAKER_URL: http://192.168.50.11:9009 # waker.yaml: hostNetwork on k3s-worker-01
   NTFY_URL: https://ntfy.sh
   GIT_AUTHOR_NAME: local-agent
   GIT_AUTHOR_EMAIL: local-agent@users.noreply.github.com
@@ -68,7 +68,7 @@ metadata:
   name: devbox
   namespace: ai-agent
 spec:
-  clusterIP: None          # governing service for the StatefulSet; no ports exposed
+  clusterIP: None # governing service for the StatefulSet; no ports exposed
   selector: {app: devbox}
 ---
 apiVersion: apps/v1
@@ -79,7 +79,7 @@ metadata:
 spec:
   serviceName: devbox
   replicas: 1
-  updateStrategy: {type: OnDelete}   # a new image never restarts a running loop: devbox-rollout.yaml deletes the pod when the agent is idle
+  updateStrategy: {type: OnDelete} # a new image never restarts a running loop: devbox-rollout.yaml deletes the pod when the agent is idle
   selector:
     matchLabels: {app: devbox}
   template:
@@ -96,7 +96,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         seccompProfile: {type: RuntimeDefault}
       affinity:
-        nodeAffinity:   # gpu-01 has the least Longhorn space and runs Jellyfin's transcodes
+        nodeAffinity: # gpu-01 has the least Longhorn space and runs Jellyfin's transcodes
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
               preference:
@@ -106,7 +106,7 @@ spec:
         - name: devbox
           # Flux writes the newest X.Y.Z tag here (ImagePolicy agent-devbox) but, with updateStrategy OnDelete,
           # the pod only restarts when devbox-rollout finds the agent idle. To roll back, pin an older tag by hand.
-          image: ghcr.io/cecedabro/local-ai-agent-devbox:fdea41d06187fee102234797e88d044847aafa35 # {"$imagepolicy": "flux-system:agent-devbox"}
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:0.1.0 # {"$imagepolicy": "flux-system:agent-devbox"}
           envFrom:
             - configMapRef: {name: devbox-config}
           env:
@@ -127,7 +127,7 @@ spec:
             capabilities: {drop: [ALL]}
           volumeMounts:
             - {name: home, mountPath: /home/agent}
-            - {name: shm, mountPath: /dev/shm}   # Chromium (Playwright) needs more than the default 64Mi
+            - {name: shm, mountPath: /dev/shm} # Chromium (Playwright) needs more than the default 64Mi
         # Test database for the agent, reachable only on localhost inside this pod. Data lives on an
         # emptyDir: a pod restart starts empty, which is fine for tests. Password is not a secret
         # (no real data, no network exposure), so it stays in plain text here.
@@ -137,7 +137,7 @@ spec:
             - {name: POSTGRES_DB, value: weather}
             - {name: POSTGRES_USER, value: weather}
             - {name: POSTGRES_PASSWORD, value: weather}
-            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}   # subdir: initdb wants to own it
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata} # subdir: initdb wants to own it
           readinessProbe:
             exec: {command: [pg_isready, -h, 127.0.0.1, -U, weather]}
             periodSeconds: 10
@@ -152,7 +152,7 @@ spec:
             - {name: pgrun, mountPath: /var/run/postgresql}
       volumes:
         - name: shm
-          emptyDir: {medium: Memory, sizeLimit: 512Mi}   # counts toward the devbox memory limit
+          emptyDir: {medium: Memory, sizeLimit: 512Mi} # counts toward the devbox memory limit
         - name: pgdata
           emptyDir: {sizeLimit: 2Gi}
         - name: pgrun
@@ -201,15 +201,15 @@ spec:
         - {protocol: UDP, port: 41641}
         - {protocol: UDP, port: 3478}
     - to:
-        - podSelector: {matchLabels: {app: agent-status}}   # status service (status.yaml)
+        - podSelector: {matchLabels: {app: agent-status}} # status service (status.yaml)
       ports:
         - {protocol: TCP, port: 8080}
     - to:
-        - ipBlock: {cidr: 192.168.50.11/32}   # waker (hostNetwork on k3s-worker-01)
+        - ipBlock: {cidr: 192.168.50.11/32} # waker (hostNetwork on k3s-worker-01)
       ports:
         - {protocol: TCP, port: 9009}
     - to:
-        - ipBlock: {cidr: 192.168.50.17/32}   # the PC: llama-server + WSL sshd
+        - ipBlock: {cidr: 192.168.50.17/32} # the PC: llama-server + WSL sshd
       ports:
         - {protocol: TCP, port: 8080}
         - {protocol: TCP, port: 2223}

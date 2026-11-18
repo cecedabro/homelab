@@ -58,7 +58,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: status
-          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.4 # {"$imagepolicy": "flux-system:agent-status"}
+          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.5 # {"$imagepolicy": "flux-system:agent-status"}
           ports:
             - {name: http, containerPort: 8080}
           env:
@@ -116,7 +116,7 @@ spec:
   ingress:
     - from:
         - podSelector: {matchLabels: {app: devbox}}
-        - podSelector: {matchLabels: {app: devbox-rollout}}   # devbox-rollout.yaml (update only when idle)
+        - podSelector: {matchLabels: {app: devbox-rollout}} # devbox-rollout.yaml (update only when idle)
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: homepage}}

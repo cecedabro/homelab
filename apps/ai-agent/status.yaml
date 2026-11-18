@@ -116,6 +116,7 @@ spec:
   ingress:
     - from:
         - podSelector: {matchLabels: {app: devbox}}
+        - podSelector: {matchLabels: {app: devbox-rollout}}   # devbox-rollout.yaml (update only when idle)
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
           podSelector: {matchLabels: {app.kubernetes.io/name: traefik}}
         - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: homepage}}

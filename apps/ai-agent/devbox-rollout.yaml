@@ -1,0 +1,119 @@
+# Applies a new devbox image only when the agent is idle. The devbox StatefulSet uses updateStrategy
+# OnDelete, so Flux changing the image never restarts a running loop. Every 5 minutes this job:
+#   1. compares the StatefulSet's spec image with devbox-0's running image (pending = they differ),
+#   2. tells agent-status (POST /api/devbox {"pending", "target"}); while pending the queue starts no
+#      new jobs, and the reply says whether the box is idle (no running job, no model lease),
+#   3. deletes pod devbox-0 when pending and idle (the StatefulSet recreates it on the new image).
+# Rollback: pin the old tag by hand in devbox.yaml (the next idle moment applies it). Undo: remove this
+# file from kustomization.yaml, delete the objects, set updateStrategy back to RollingUpdate.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: devbox-rollout, namespace: ai-agent}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: devbox-rollout, namespace: ai-agent}
+rules:
+  - apiGroups: ["apps"]
+    resources: [statefulsets]
+    resourceNames: [devbox]
+    verbs: [get]
+  - apiGroups: [""]
+    resources: [pods]
+    resourceNames: [devbox-0]
+    verbs: [get, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: devbox-rollout, namespace: ai-agent}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: devbox-rollout}
+subjects: [{kind: ServiceAccount, name: devbox-rollout, namespace: ai-agent}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: devbox-rollout-script, namespace: ai-agent}
+data:
+  rollout.py: |
+    import json, os, ssl, sys, urllib.request, urllib.error
+    SA = "/var/run/secrets/kubernetes.io/serviceaccount"
+    API = "https://kubernetes.default.svc"
+    ns = open(SA + "/namespace").read().strip()
+    tok = open(SA + "/token").read().strip()
+    ctx = ssl.create_default_context(cafile=SA + "/ca.crt")
+
+    def kube(method, path):
+        req = urllib.request.Request(API + path, method=method, headers={"Authorization": "Bearer " + tok})
+        try:
+            with urllib.request.urlopen(req, context=ctx, timeout=20) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            raise
+
+    sts = kube("GET", f"/apis/apps/v1/namespaces/{ns}/statefulsets/devbox")
+    spec_image = next(c["image"] for c in sts["spec"]["template"]["spec"]["containers"] if c["name"] == "devbox")
+    pod = kube("GET", f"/api/v1/namespaces/{ns}/pods/devbox-0")
+    run_image = None
+    if pod:
+        run_image = next((c["image"] for c in pod["spec"]["containers"] if c["name"] == "devbox"), None)
+    pending = pod is not None and run_image != spec_image
+    target = spec_image.rsplit(":", 1)[-1]
+    body = json.dumps({"pending": pending, "target": target}).encode()
+    req = urllib.request.Request(
+        os.environ["STATUS_URL"].rstrip("/") + "/api/devbox", data=body, method="POST",
+        headers={"Authorization": "Bearer " + os.environ["STATUS_TOKEN"], "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        idle = bool(json.load(r).get("idle"))
+    print(f"pending={pending} idle={idle} running={run_image} spec={spec_image}", flush=True)
+    if pending and idle:
+        kube("DELETE", f"/api/v1/namespaces/{ns}/pods/devbox-0")
+        print("deleted devbox-0: it comes back on", target, flush=True)
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: devbox-rollout, namespace: ai-agent}
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 120
+      template:
+        metadata:
+          labels: {app: devbox-rollout}
+        spec:
+          serviceAccountName: devbox-rollout
+          restartPolicy: Never
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            seccompProfile: {type: RuntimeDefault}
+          containers:
+            - name: rollout
+              image: python:3.12.8-alpine3.20
+              command: [python, /scripts/rollout.py]
+              env:
+                - {name: STATUS_URL, value: "http://agent-status.ai-agent.svc.cluster.local:8080"}
+                - {name: STATUS_TOKEN, valueFrom: {secretKeyRef: {name: agent-status, key: STATUS_TOKEN}}}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {memory: 128Mi}
+              volumeMounts:
+                - {name: script, mountPath: /scripts}
+                - {name: tmp, mountPath: /tmp}
+          volumes:
+            - name: script
+              configMap: {name: devbox-rollout-script}
+            - name: tmp
+              emptyDir: {}

@@ -6,6 +6,7 @@ resources:
   - devbox.yaml
   - waker.yaml
   - status.yaml
+  - devbox-rollout.yaml
 generatorOptions:
   disableNameSuffixHash: true   # waker.py changes need: kubectl -n ai-waker rollout restart deploy/waker
 configMapGenerator:

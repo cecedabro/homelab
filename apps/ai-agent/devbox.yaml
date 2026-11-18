@@ -79,6 +79,7 @@ metadata:
 spec:
   serviceName: devbox
   replicas: 1
+  updateStrategy: {type: OnDelete}   # a new image never restarts a running loop: devbox-rollout.yaml deletes the pod when the agent is idle
   selector:
     matchLabels: {app: devbox}
   template:
@@ -103,9 +104,9 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: devbox
-          # Pinned to a CI build (tag = commit sha in local-ai-agent). Bump by hand: a new image
-          # restarts the pod and kills a running agent loop, so never let it roll automatically.
-          image: ghcr.io/cecedabro/local-ai-agent-devbox:fdea41d06187fee102234797e88d044847aafa35
+          # Flux writes the newest X.Y.Z tag here (ImagePolicy agent-devbox) but, with updateStrategy OnDelete,
+          # the pod only restarts when devbox-rollout finds the agent idle. To roll back, pin an older tag by hand.
+          image: ghcr.io/cecedabro/local-ai-agent-devbox:fdea41d06187fee102234797e88d044847aafa35 # {"$imagepolicy": "flux-system:agent-devbox"}
           envFrom:
             - configMapRef: {name: devbox-config}
           env:

@@ -78,6 +78,11 @@ config:
             description: Chat with the models on the Windows PC (Ollama over Tailscale, PC must be on)
             icon: open-webui
             siteMonitor: http://open-webui.open-webui.svc.cluster.local/health
+        - Dewdrop:
+            href: https://dewdrop.cedricschippers.dev
+            description: Chat with the local model (public, behind Cloudflare Access)
+            icon: mdi-water-outline
+            siteMonitor: http://dewdrop.dewdrop.svc.cluster.local/healthz
         - Agent status:
             href: https://agent-status.home.cedricschippers.dev
             description: Local coding agent - model state, job queue, runs and token speed (writes need the token)

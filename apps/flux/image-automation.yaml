@@ -128,3 +128,21 @@ spec:
     extract: '$ver'
   policy:
     semver: {range: ">=0.1.0"}
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata: {name: dewdrop, namespace: flux-system}
+spec:
+  image: ghcr.io/cecedabro/local-ai-agent-chat
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata: {name: dewdrop, namespace: flux-system}
+spec:
+  imageRepositoryRef: {name: dewdrop}
+  filterTags:
+    pattern: '^(?P<ver>[0-9]+\.[0-9]+\.[0-9]+)$'
+    extract: '$ver'
+  policy:
+    semver: {range: ">=0.1.0"}

@@ -1,0 +1,82 @@
+# dewdrop: chat front end for the local model (github.com/cecedabro/local-ai-agent, chat/). Public at
+# dewdrop.cedricschippers.dev through the Cloudflare tunnel, behind Cloudflare Access (made by hand in the
+# dashboard). Talks to the model only through the agent-status gateway (own key, interactive lane).
+# Secret `dewdrop` (GATEWAY_KEY, ADMIN_PASSWORD) is created by hand with kubectl.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: dewdrop-data}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata: {name: dewdrop}
+spec:
+  selector: {app: dewdrop}
+  ports:
+    - {name: http, port: 80, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: dewdrop}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}   # SQLite on an RWO volume
+  selector:
+    matchLabels: {app: dewdrop}
+  template:
+    metadata:
+      labels: {app: dewdrop}
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
+      containers:
+        - name: dewdrop
+          image: ghcr.io/cecedabro/local-ai-agent-chat:0.1.0 # {"$imagepolicy": "flux-system:dewdrop"}
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - {name: GATEWAY_URL, value: "http://agent-status.ai-agent.svc.cluster.local:8080/v1"}
+            - {name: STATUS_URL, value: "http://agent-status.ai-agent.svc.cluster.local:8080"}
+            - {name: ADMIN_USER, value: cedric}
+            - {name: SECURE_COOKIES, value: "1"}
+            - {name: GATEWAY_KEY, valueFrom: {secretKeyRef: {name: dewdrop, key: GATEWAY_KEY}}}
+            - {name: ADMIN_PASSWORD, valueFrom: {secretKeyRef: {name: dewdrop, key: ADMIN_PASSWORD}}}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 20m, memory: 64Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: dewdrop-data}
+        - name: tmp
+          emptyDir: {}

@@ -58,7 +58,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: status
-          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.9 # {"$imagepolicy": "flux-system:agent-status"}
+          image: ghcr.io/cecedabro/local-ai-agent-status:0.1.10 # {"$imagepolicy": "flux-system:agent-status"}
           ports:
             - {name: http, containerPort: 8080}
           env:

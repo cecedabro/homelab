@@ -49,7 +49,7 @@ spec:
                   - {key: kubernetes.io/hostname, operator: NotIn, values: [k3s-gpu-01]}
       containers:
         - name: dewdrop
-          image: ghcr.io/cecedabro/local-ai-agent-chat:0.1.3 # {"$imagepolicy": "flux-system:dewdrop"}
+          image: ghcr.io/cecedabro/local-ai-agent-chat:0.1.4 # {"$imagepolicy": "flux-system:dewdrop"}
           ports:
             - {name: http, containerPort: 8080}
           env:

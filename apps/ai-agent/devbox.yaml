@@ -56,8 +56,8 @@ data:
   QUEUE_OWNERS: cecedabro
   WAKER_URL: http://192.168.50.11:9009 # waker.yaml: hostNetwork on k3s-worker-01
   NTFY_URL: https://ntfy.sh
-  GIT_AUTHOR_NAME: local-agent
-  GIT_AUTHOR_EMAIL: local-agent@users.noreply.github.com
+  GIT_AUTHOR_NAME: Dewdrop - agent
+  GIT_AUTHOR_EMAIL: 358922071+dewdrop-agent@users.noreply.github.com
   TS_HOSTNAME: devbox
   # Postgres sidecar below: throwaway test database for the agent's `make check` (test data only)
   DATABASE_URL: postgresql://weather:weather@localhost:5432/weather

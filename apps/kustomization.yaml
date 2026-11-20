@@ -51,6 +51,7 @@ resources:
   # network policies
   - network-policies/cloudflare.yaml
   - network-policies/homepage.yaml
+  - homepage/pwa/pwa-configmap.yaml
   - network-policies/hva.yaml
   - network-policies/media.yaml
   - network-policies/monitoring.yaml
@@ -74,10 +75,6 @@ generatorOptions:
     reconcile.fluxcd.io/watch: Enabled
 configMapGenerator:
   - {name: homepage-values, namespace: flux-system, files: [values.yaml=homepage/values.yaml]}
-  # Homepage's home-screen icons (iPhone/Android), mounted over the chart's default images in /app/public
-  - name: homepage-pwa
-    namespace: homepage
-    files: [apple-touch-icon.png=homepage/pwa/apple-touch-icon.png, android-chrome-192x192.png=homepage/pwa/android-chrome-192x192.png, android-chrome-512x512.png=homepage/pwa/android-chrome-512x512.png, favicon-32x32.png=homepage/pwa/favicon-32x32.png, favicon-16x16.png=homepage/pwa/favicon-16x16.png]
   - {name: grafana-values, namespace: flux-system, files: [values.yaml=grafana/values.yaml]}
   - {name: prometheus-values, namespace: flux-system, files: [values.yaml=prometheus/values.yaml]}
   - {name: descheduler-values, namespace: flux-system, files: [values.yaml=descheduler/values.yaml]}

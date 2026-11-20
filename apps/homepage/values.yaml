@@ -157,7 +157,7 @@ kubernetes:
   mode: disable
 
 persistence:
-  # custom app icon for "Add to Home Screen" (files come from ConfigMap homepage-pwa, see apps/kustomization.yaml)
+  # custom app icon for "Add to Home Screen" (files come from ConfigMap homepage-pwa, see apps/homepage/pwa/pwa-configmap.yaml)
   pwa:
     enabled: true
     type: configMap

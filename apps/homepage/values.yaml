@@ -156,6 +156,19 @@ config:
 kubernetes:
   mode: disable
 
+persistence:
+  # custom app icon for "Add to Home Screen" (files come from ConfigMap homepage-pwa, see apps/kustomization.yaml)
+  pwa:
+    enabled: true
+    type: configMap
+    name: homepage-pwa
+    subPath:
+      - {path: apple-touch-icon.png, mountPath: /app/public/apple-touch-icon.png, readOnly: true}
+      - {path: android-chrome-192x192.png, mountPath: /app/public/android-chrome-192x192.png, readOnly: true}
+      - {path: android-chrome-512x512.png, mountPath: /app/public/android-chrome-512x512.png, readOnly: true}
+      - {path: favicon-32x32.png, mountPath: /app/public/favicon-32x32.png, readOnly: true}
+      - {path: favicon-16x16.png, mountPath: /app/public/favicon-16x16.png, readOnly: true}
+
 env:
   - name: HOMEPAGE_ALLOWED_HOSTS
     value: "192.168.50.101:3000,home.cedricschippers.dev,homepage.home.cedricschippers.dev"

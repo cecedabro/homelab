@@ -72,6 +72,11 @@ config:
             description: Guitar practice app (home network and Tailscale; login = APP_PASSWORD)
             icon: mdi-guitar-acoustic
             siteMonitor: http://woodshed.woodshed.svc.cluster.local/healthz
+        - Weatherstation:
+            href: https://weatherstation.home.cedricschippers.dev
+            description: Garden weather, sensors and plant tasks (sign-in required; public address planned)
+            icon: mdi-weather-partly-cloudy
+            siteMonitor: http://weatherstation.weatherstation.svc.cluster.local/healthz
     - AI:
         - Open WebUI:
             href: https://chat.home.cedricschippers.dev

@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: weatherstation-media
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: weatherstation
+spec:
+  selector:
+    app.kubernetes.io/name: weatherstation
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weatherstation
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # RWO media volume; migrations never run twice at once
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: weatherstation
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: weatherstation
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values: [k3s-gpu-01]
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16.15
+          command: ["sh", "-c", "until pg_isready -h weatherstation-db -p 5432 -U weatherstation; do sleep 2; done"]
+          securityContext: &restricted
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+        - name: migrate
+          image: ghcr.io/cecedabro/weatherstation:v0.1.0 # {"$imagepolicy": "flux-system:weatherstation"}
+          workingDir: /app
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - secretRef:
+                name: weatherstation-app
+          env: &env
+            - name: APP_ENV
+              value: production
+            - name: MEDIA_DIR
+              value: /data/media
+            - name: SEED_CATALOGUE
+              value: "true"
+            - name: GARDEN_WIDTH
+              value: "10"
+            - name: GARDEN_DEPTH
+              value: "20"
+          securityContext: *restricted
+          resources:
+            requests: {cpu: 25m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: app
+          image: ghcr.io/cecedabro/weatherstation:v0.1.0 # {"$imagepolicy": "flux-system:weatherstation"}
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: weatherstation-app
+          env: *env
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 10
+          securityContext: *restricted
+          resources:
+            requests: {cpu: 25m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - name: media
+              mountPath: /data/media
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: weatherstation-media
+        - name: tmp
+          emptyDir: {}
